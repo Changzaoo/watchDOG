@@ -224,14 +224,14 @@ Parametros esperados:
 - Pre-deploy command: `npm run prisma:migrate:deploy --workspace=backend`
 - Start command: `npm run start --workspace=backend`
 - Health check: `/health`
-- Firebase Auth: configure `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_WEB_API_KEY`, `AUTH_REQUIRED=true` e, opcionalmente, `AUTH_ALLOWED_EMAILS`
+- Firebase Auth: configure `FIREBASE_SERVICE_ACCOUNT_JSON` (preferido) ou `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64`; como alternativa use `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` e `FIREBASE_PRIVATE_KEY`. Configure tambem `FIREBASE_WEB_API_KEY`, `AUTH_REQUIRED=true` e, opcionalmente, `AUTH_ALLOWED_EMAILS`
 - `DATABASE_URL`: `file:/var/data/watchdog.db`
 - `ENABLE_LOCAL_SCANS`: `false`
 - `CORS_ORIGINS`: URL pública do frontend na Vercel, por exemplo `https://watchdog.vercel.app`
 
 O banco SQLite usa o disco persistente `/var/data` configurado no Blueprint.
 
-O app nao possui cadastro de usuarios. O login usa apenas contas ja existentes no Firebase Auth. As credenciais da service account devem ficar somente nas variaveis do backend e nunca no frontend ou no repositorio.
+O app nao possui cadastro de usuarios. O login usa apenas contas ja existentes no Firebase Auth. As credenciais da service account devem ficar somente nas variaveis do backend e nunca no frontend ou no repositorio. Se o Render mostrar `authConfigured: false` em `/health`, faltam variaveis do Firebase no ambiente do backend.
 
 ### Frontend na Vercel
 

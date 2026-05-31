@@ -11,21 +11,79 @@ interface FirebaseLoginResponse {
   displayName?: string;
 }
 
+interface FirebaseAdminConfig {
+  projectId: string;
+  clientEmail: string;
+  privateKey: string;
+}
+
 function env(name: string): string {
   return process.env[name]?.trim() || '';
 }
 
-function privateKey(): string {
-  return env('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n');
+function decodeBase64(value: string): string {
+  try {
+    return Buffer.from(value, 'base64').toString('utf8').trim();
+  } catch {
+    return '';
+  }
+}
+
+function normalizePrivateKey(value?: string): string {
+  return (value || '')
+    .trim()
+    .replace(/^"|"$/g, '')
+    .replace(/\\n/g, '\n');
+}
+
+function parseServiceAccountJson(): FirebaseAdminConfig | null {
+  const rawJson = env('FIREBASE_SERVICE_ACCOUNT_JSON') ||
+    decodeBase64(env('FIREBASE_SERVICE_ACCOUNT_JSON_BASE64'));
+  if (!rawJson) return null;
+
+  try {
+    const parsed = JSON.parse(rawJson) as Record<string, string | undefined>;
+    const projectId = parsed.project_id || parsed.projectId || '';
+    const clientEmail = parsed.client_email || parsed.clientEmail || '';
+    const privateKey = normalizePrivateKey(parsed.private_key || parsed.privateKey);
+
+    if (!projectId || !clientEmail || !privateKey) return null;
+    return { projectId, clientEmail, privateKey };
+  } catch {
+    return null;
+  }
+}
+
+function getFirebaseAdminConfig(): FirebaseAdminConfig | null {
+  const serviceAccount = parseServiceAccountJson();
+  if (serviceAccount) return serviceAccount;
+
+  const projectId = env('FIREBASE_PROJECT_ID');
+  const clientEmail = env('FIREBASE_CLIENT_EMAIL');
+  const privateKey = normalizePrivateKey(env('FIREBASE_PRIVATE_KEY'));
+
+  if (!projectId || !clientEmail || !privateKey) return null;
+  return { projectId, clientEmail, privateKey };
+}
+
+export function getMissingAuthConfig(): string[] {
+  const missing: string[] = [];
+
+  if (!getFirebaseAdminConfig()) {
+    missing.push(
+      'FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_JSON_BASE64, or FIREBASE_PROJECT_ID + FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY'
+    );
+  }
+
+  if (!env('FIREBASE_WEB_API_KEY')) {
+    missing.push('FIREBASE_WEB_API_KEY');
+  }
+
+  return missing;
 }
 
 export function isAuthConfigured(): boolean {
-  return Boolean(
-    env('FIREBASE_PROJECT_ID') &&
-    env('FIREBASE_CLIENT_EMAIL') &&
-    privateKey() &&
-    env('FIREBASE_WEB_API_KEY')
-  );
+  return getMissingAuthConfig().length === 0;
 }
 
 export function isAuthRequired(): boolean {
@@ -48,15 +106,16 @@ export function isEmailAllowed(email?: string): boolean {
 }
 
 export function getFirebaseAuth() {
-  if (!isAuthConfigured()) {
-    throw new Error('Firebase authentication is not configured');
+  const adminConfig = getFirebaseAdminConfig();
+  if (!adminConfig) {
+    throw new Error(`Firebase authentication is not configured: ${getMissingAuthConfig().join(', ')}`);
   }
 
   if (getApps().length === 0) {
     const serviceAccount: ServiceAccount = {
-      projectId: env('FIREBASE_PROJECT_ID'),
-      clientEmail: env('FIREBASE_CLIENT_EMAIL'),
-      privateKey: privateKey(),
+      projectId: adminConfig.projectId,
+      clientEmail: adminConfig.clientEmail,
+      privateKey: adminConfig.privateKey,
     };
 
     initializeApp({

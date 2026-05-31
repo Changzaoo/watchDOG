@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import {
+  getMissingAuthConfig,
   isAuthConfigured,
   isEmailAllowed,
   isAuthRequired,
@@ -24,6 +25,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   if (!isAuthConfigured()) {
     return res.status(503).json({
       error: 'Autenticacao Firebase nao configurada no backend.',
+      detail: 'Configure a service account do Firebase e FIREBASE_WEB_API_KEY no ambiente do backend.',
+      missing: getMissingAuthConfig(),
     });
   }
 

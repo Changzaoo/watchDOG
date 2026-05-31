@@ -11,7 +11,7 @@ import { findingsRouter } from './routes/findings';
 import { eventsRouter } from './routes/events';
 import { rulesRouter } from './routes/rules';
 import { prisma } from './db/client';
-import { isAuthConfigured, isAuthRequired } from './auth/firebase';
+import { getMissingAuthConfig, isAuthConfigured, isAuthRequired } from './auth/firebase';
 import { requireAuth } from './middleware/auth';
 
 const app = express();
@@ -101,6 +101,7 @@ app.get('/health', (_req, res) => {
     localScansEnabled,
     authRequired: isAuthRequired(),
     authConfigured: isAuthConfigured(),
+    authMissingConfig: getMissingAuthConfig(),
     timestamp: new Date().toISOString(),
   });
 });

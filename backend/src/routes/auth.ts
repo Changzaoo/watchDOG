@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   createSessionCookie,
+  getMissingAuthConfig,
   isAuthConfigured,
   isEmailAllowed,
   isAuthRequired,
@@ -17,6 +18,14 @@ const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
+
+function firebaseConfigError() {
+  return {
+    error: 'Autenticacao Firebase nao configurada no backend.',
+    detail: 'Configure a service account do Firebase e FIREBASE_WEB_API_KEY no ambiente do backend.',
+    missing: getMissingAuthConfig(),
+  };
+}
 
 function cookieOptions() {
   return {
@@ -88,7 +97,7 @@ authRouter.post('/login', async (req, res) => {
   }
 
   if (!isAuthConfigured()) {
-    return res.status(503).json({ error: 'Autenticacao Firebase nao configurada no backend.' });
+    return res.status(503).json(firebaseConfigError());
   }
 
   const parsed = loginSchema.safeParse(req.body);

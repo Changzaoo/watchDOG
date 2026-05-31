@@ -9,6 +9,7 @@ export interface BackendHealth {
   localScansEnabled: boolean;
   authRequired: boolean;
   authConfigured: boolean;
+  authMissingConfig?: string[];
   timestamp: string;
 }
 
@@ -27,8 +28,12 @@ export interface AuthSession {
 
 function formatApiError(err: any, fallback: string): string {
   if (!err) return fallback;
+  const missing = Array.isArray(err.missing) && err.missing.length
+    ? ` Faltando: ${err.missing.join(', ')}.`
+    : '';
   if (typeof err.error === 'string') {
-    return err.detail ? `${err.error}: ${err.detail}` : err.error;
+    const message = err.detail ? `${err.error}: ${err.detail}` : err.error;
+    return `${message}${missing}`;
   }
   const fieldErrors = err.error?.fieldErrors;
   if (fieldErrors && typeof fieldErrors === 'object') {

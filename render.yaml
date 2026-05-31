@@ -16,6 +16,10 @@ services:
         value: "false"
       - key: CORS_ORIGINS
         value: https://watchdog-chi.vercel.app
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON_BASE64
+        sync: false
       - key: FIREBASE_PROJECT_ID
         sync: false
       - key: FIREBASE_CLIENT_EMAIL
