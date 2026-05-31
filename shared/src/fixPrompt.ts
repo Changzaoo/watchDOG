@@ -60,7 +60,10 @@ export function generateAggregateFixPrompt(scan: Scan, findings: Finding[]): str
   prompt += '3. Propor alteracoes concretas em configuracoes, headers, codigo, infraestrutura ou dependencias.\n';
   prompt += '4. Incluir comandos, snippets ou diffs quando isso ajudar a aplicar a correcao.\n';
   prompt += '5. Incluir uma forma objetiva de testar cada correcao.\n';
-  prompt += '6. Nao remover funcionalidades sem justificar o impacto.\n\n';
+  prompt += '6. Nao remover funcionalidades sem justificar o impacto.\n';
+  prompt += '7. Fazer somente as alteracoes necessarias para corrigir os achados; nao adicionar recursos, dependencias, permissoes ou exposicoes extras sem necessidade.\n';
+  prompt += '8. Nao colocar segredos, chaves, tokens, regras sensiveis, validacoes de autorizacao ou logica critica de seguranca no client-side.\n';
+  prompt += '9. Manter configuracoes, dados, processamento, validacoes e qualquer comportamento sensivel no server-side; o client-side deve ficar limitado a UI, estado nao sensivel e chamadas para APIs seguras.\n\n';
   prompt += `Achados para corrigir (${selected.length}):\n\n`;
 
   selected.forEach((finding, index) => {
