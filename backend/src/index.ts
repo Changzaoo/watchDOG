@@ -13,6 +13,11 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
 const localScansEnabled = process.env.ENABLE_LOCAL_SCANS === 'true' || !isProduction;
+
+if (isProduction) {
+  app.set('trust proxy', 1);
+}
+
 const defaultCorsOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
