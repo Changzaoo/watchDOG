@@ -1,7 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, PlusCircle, History, Settings,
-  HelpCircle, Wifi, WifiOff
+  LayoutDashboard, PlusCircle, History, Wifi, WifiOff
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { cn } from '../lib/utils';
@@ -11,8 +10,6 @@ const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { to: '/scan/new', label: 'Novo Scan', icon: PlusCircle },
   { to: '/history', label: 'Histórico', icon: History },
-  { to: '/settings', label: 'Configurações', icon: Settings },
-  { to: '/help', label: 'Ajuda', icon: HelpCircle },
 ];
 
 export function Sidebar() {

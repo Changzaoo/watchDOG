@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, HelpCircle, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info, ShieldAlert } from 'lucide-react';
 import { DefenseLayerData, DefenseLayerStatus } from '@sentinelscope/shared';
 import { cn } from '../lib/utils';
 
@@ -10,7 +10,7 @@ const STATUS_META: Record<DefenseLayerStatus, { label: string; className: string
   healthy: { label: 'Saudável', className: 'text-green-400 bg-green-900/20 border-green-800/40', icon: CheckCircle2 },
   warning: { label: 'Atenção', className: 'text-yellow-400 bg-yellow-900/20 border-yellow-800/40', icon: AlertTriangle },
   critical: { label: 'Crítico', className: 'text-red-400 bg-red-900/20 border-red-800/40', icon: ShieldAlert },
-  unknown: { label: 'Sem dados', className: 'text-gray-400 bg-dark-800 border-dark-700', icon: HelpCircle },
+  unknown: { label: 'Sem dados', className: 'text-gray-400 bg-dark-800 border-dark-700', icon: Info },
 };
 
 const STATUS_ORDER: Record<DefenseLayerStatus, number> = {

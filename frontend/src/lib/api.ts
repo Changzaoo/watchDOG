@@ -1,10 +1,7 @@
 import { Scan, Finding, ScanLog, ThreatModelData, DefenseLayerData } from '@sentinelscope/shared';
 
-const DIRECT_API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
-const USE_DIRECT_API = import.meta.env.VITE_USE_DIRECT_API === 'true';
-const API_ORIGIN = USE_DIRECT_API ? DIRECT_API_ORIGIN : '';
-const BASE = API_ORIGIN ? `${API_ORIGIN}/api` : '/api';
-const HEALTH_URL = API_ORIGIN ? `${API_ORIGIN}/health` : '/health';
+const BASE = '/api';
+const HEALTH_URL = '/health';
 
 export interface BackendHealth {
   status: string;

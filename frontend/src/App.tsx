@@ -6,8 +6,6 @@ import { ScanLocal } from './pages/ScanLocal';
 import { ScanUrl } from './pages/ScanUrl';
 import { ScanResult } from './pages/ScanResult';
 import { History } from './pages/History';
-import { Settings } from './pages/Settings';
-import { Help } from './pages/Help';
 import { ThreatModel } from './pages/ThreatModel';
 import { DefenseDepth } from './pages/DefenseDepth';
 
@@ -23,8 +21,6 @@ export default function App() {
         <Route path="scans/:id/threat-model" element={<ThreatModel />} />
         <Route path="scans/:id/defense-depth" element={<DefenseDepth />} />
         <Route path="history" element={<History />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path="help" element={<Help />} />
         <Route path="*" element={<Dashboard />} />
       </Route>
     </Routes>

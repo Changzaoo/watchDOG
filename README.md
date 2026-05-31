@@ -219,7 +219,7 @@ npm run typecheck      # Verificar tipos TypeScript
 
 O arquivo `render.yaml` define um Web Service Node chamado `watchdog-api`.
 
-Configurações esperadas:
+Parametros esperados:
 - Build command: `npm ci && npm run build --workspace=shared && npm run build --workspace=scanner && npm run prisma:generate --workspace=backend && npm run build --workspace=backend`
 - Pre-deploy command: `npm run prisma:migrate:deploy --workspace=backend`
 - Start command: `npm run start --workspace=backend`
@@ -241,7 +241,7 @@ Em producao, o frontend usa os rewrites do Vercel para chamar o backend pelo mes
 /health -> https://watchdog-to6v.onrender.com/health
 ```
 
-Isso evita chamadas diretas do navegador para `onrender.com`, que podem ser bloqueadas por ad blockers ou privacy shields. Se precisar chamar o backend diretamente em outro deploy, configure `VITE_USE_DIRECT_API=true` junto com `VITE_API_URL`.
+Isso evita chamadas diretas do navegador para `onrender.com`, que podem ser bloqueadas por ad blockers ou privacy shields. O bundle do frontend nao precisa de variaveis de ambiente para escolher backend; essa decisao fica no Vercel/servidor via rewrites.
 
 Depois de saber a URL final da Vercel, volte no Render e defina `CORS_ORIGINS` com essa URL.
 
