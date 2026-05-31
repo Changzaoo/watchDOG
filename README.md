@@ -234,11 +234,14 @@ O banco SQLite usa o disco persistente `/var/data` configurado no Blueprint.
 
 O arquivo `vercel.json` compila apenas `shared` e `frontend`, publicando `frontend/dist`.
 
-Configure a variável de ambiente na Vercel:
+Em producao, o frontend usa os rewrites do Vercel para chamar o backend pelo mesmo dominio:
 
-```bash
-VITE_API_URL=https://watchdog-api.onrender.com
+```text
+/api/*  -> https://watchdog-to6v.onrender.com/api/*
+/health -> https://watchdog-to6v.onrender.com/health
 ```
+
+Isso evita chamadas diretas do navegador para `onrender.com`, que podem ser bloqueadas por ad blockers ou privacy shields. Se precisar chamar o backend diretamente em outro deploy, configure `VITE_USE_DIRECT_API=true` junto com `VITE_API_URL`.
 
 Depois de saber a URL final da Vercel, volte no Render e defina `CORS_ORIGINS` com essa URL.
 

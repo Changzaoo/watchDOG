@@ -5,6 +5,14 @@
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://watchdog-to6v.onrender.com/api/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://watchdog-to6v.onrender.com/health"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
