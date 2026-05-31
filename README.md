@@ -226,6 +226,7 @@ Parametros esperados:
 - Health check: `/health`
 - Firebase Auth: configure `FIREBASE_SERVICE_ACCOUNT_JSON` (preferido) ou `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64`; como alternativa use `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` e `FIREBASE_PRIVATE_KEY`. Configure tambem `FIREBASE_WEB_API_KEY`, `AUTH_REQUIRED=true` e, opcionalmente, `AUTH_ALLOWED_EMAILS`
 - `DATABASE_URL`: `file:/var/data/watchdog.db`
+- `HOST`: `0.0.0.0`
 - `ENABLE_LOCAL_SCANS`: `false`
 - `CORS_ORIGINS`: URL pública do frontend na Vercel, por exemplo `https://watchdog.vercel.app`
 

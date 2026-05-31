@@ -18,7 +18,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
 const isPublicBackend = isProduction || process.env.PUBLIC_BACKEND === 'true';
-const HOST = process.env.HOST || (isPublicBackend ? '127.0.0.1' : '0.0.0.0');
+const HOST = process.env.HOST || (isPublicBackend ? '0.0.0.0' : '127.0.0.1');
 const localScansEnabled = isPublicBackend
   ? process.env.ENABLE_LOCAL_SCANS === 'true' && process.env.ALLOW_LOCAL_SCANS_ON_PUBLIC_BACKEND === 'true'
   : process.env.ENABLE_LOCAL_SCANS === 'true' || !isProduction;
