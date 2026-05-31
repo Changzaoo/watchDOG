@@ -97,15 +97,15 @@ export function QrCodeReaderButton({ disabled, onRead }: Props) {
         disabled={disabled}
         onClick={() => setOpen(true)}
         title="Ler QR code"
-        className="btn-secondary flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+        className="btn-secondary touch-row flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <QrCode className="w-4 h-4" />
         QR
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-lg rounded-xl border border-dark-700 bg-dark-850 p-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4">
+          <div className="w-full max-w-lg rounded-lg border border-dark-700 bg-dark-850 p-4 shadow-2xl sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 text-lg font-semibold text-white">

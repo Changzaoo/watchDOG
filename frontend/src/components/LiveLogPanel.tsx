@@ -32,7 +32,7 @@ export function LiveLogPanel({ logs, maxHeight = '200px' }: Props) {
           <div
             key={i}
             className={cn(
-              'log-entry',
+              'log-entry break-words',
               log.level === 'error' ? 'log-error' :
               log.level === 'warn' ? 'log-warn' : 'log-info'
             )}

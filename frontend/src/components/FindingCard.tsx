@@ -63,12 +63,12 @@ export function FindingCard({ finding }: Props) {
   }[finding.confidence || 'medium'];
 
   return (
-    <div className="border border-dark-800 rounded-lg overflow-hidden bg-dark-850 hover:border-dark-700 transition-colors">
+    <div className="overflow-hidden rounded-lg border border-dark-800 bg-dark-850 transition-colors hover:border-dark-700">
       <div
-        className="flex items-start gap-3 p-4 cursor-pointer"
+        className="flex cursor-pointer items-start gap-3 p-3 sm:p-4"
         onClick={() => setOpen(!open)}
       >
-        <div className="mt-0.5">
+        <div className="mt-0.5 flex-shrink-0">
           {open ? <ChevronDown className="w-4 h-4 text-gray-500" /> : <ChevronRight className="w-4 h-4 text-gray-500" />}
         </div>
         <div className="flex-1 min-w-0">
@@ -90,12 +90,12 @@ export function FindingCard({ finding }: Props) {
               </span>
             )}
           </div>
-          <div className="mt-1 font-medium text-gray-200 truncate">{finding.title}</div>
+          <div className="mt-1 line-clamp-2 font-medium text-gray-200 sm:truncate">{finding.title}</div>
           <div className="mt-0.5 text-xs text-gray-500 flex items-center gap-2 flex-wrap">
             {finding.filePath && (
               <span className="flex items-center gap-1">
                 <FileCode className="w-3 h-3" />
-                <span className="font-mono truncate max-w-xs">
+                <span className="max-w-[14rem] truncate font-mono sm:max-w-xs">
                   {finding.filePath.split(/[/\\]/).slice(-2).join('/')}
                   {finding.line ? `:${finding.line}` : ''}
                 </span>
@@ -104,7 +104,7 @@ export function FindingCard({ finding }: Props) {
             {finding.url && (
               <span className="flex items-center gap-1">
                 <Link className="w-3 h-3" />
-                <span className="truncate max-w-xs">{finding.url}</span>
+                <span className="max-w-[14rem] truncate sm:max-w-xs">{finding.url}</span>
               </span>
             )}
           </div>
@@ -112,7 +112,7 @@ export function FindingCard({ finding }: Props) {
       </div>
 
       {open && (
-        <div className="border-t border-dark-800 p-4 space-y-4 animate-fade-in">
+        <div className="border-t border-dark-800 p-3 sm:p-4 space-y-4 animate-fade-in">
           {finding.evidenceMasked && (
             <div>
               <div className="text-xs text-gray-500 mb-1">Evidencia mascarada</div>
@@ -165,9 +165,9 @@ export function FindingCard({ finding }: Props) {
 
           {finding.fixPrompt && (
             <div>
-              <div className="flex items-center justify-between gap-3 mb-1">
+              <div className="flex flex-col gap-2 mb-1 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-xs text-gray-500">Prompt de correcao</div>
-                <button onClick={copyFixPrompt} className="btn-secondary text-xs flex items-center gap-1.5 py-1">
+                <button onClick={copyFixPrompt} className="btn-secondary touch-row text-xs flex items-center justify-center gap-1.5 py-1">
                   {copiedPrompt ? <CheckCircle className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
                   {copiedPrompt ? 'Copiado!' : 'Copiar prompt'}
                 </button>
@@ -186,9 +186,9 @@ export function FindingCard({ finding }: Props) {
 
           <div>
             <div className="text-xs text-gray-500 mb-1">Nota do usuario</div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <textarea
-                className="input text-sm min-h-20 resize-y"
+                className="input min-h-20 resize-y text-sm"
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 placeholder="Observacoes, falso positivo explicado, link do PR de correcao..."
@@ -197,7 +197,7 @@ export function FindingCard({ finding }: Props) {
               <button
                 onClick={saveNote}
                 disabled={savingNote}
-                className="btn-secondary self-start p-2 disabled:opacity-50"
+                className="btn-secondary touch-row flex items-center justify-center p-2 disabled:opacity-50 sm:self-start"
                 title="Salvar nota"
               >
                 <Save className="w-4 h-4" />
@@ -205,8 +205,8 @@ export function FindingCard({ finding }: Props) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pt-2 border-t border-dark-800 flex-wrap">
-            <button onClick={copyRemediation} className="btn-secondary text-xs flex items-center gap-1.5">
+          <div className="grid grid-cols-1 gap-2 pt-2 border-t border-dark-800 sm:flex sm:flex-wrap sm:items-center">
+            <button onClick={copyRemediation} className="btn-secondary touch-row text-xs flex items-center justify-center gap-1.5">
               {copied ? <CheckCircle className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? 'Copiado!' : 'Copiar correcao'}
             </button>
@@ -214,19 +214,19 @@ export function FindingCard({ finding }: Props) {
               <>
                 <button
                   onClick={() => handleStatus('fixed')}
-                  className="btn-primary text-xs flex items-center gap-1.5"
+                  className="btn-primary touch-row text-xs flex items-center justify-center gap-1.5"
                 >
                   <CheckCircle className="w-3.5 h-3.5" /> Marcar corrigido
                 </button>
                 <button
                   onClick={() => handleStatus('false_positive')}
-                  className="btn-secondary text-xs flex items-center gap-1.5"
+                  className="btn-secondary touch-row text-xs flex items-center justify-center gap-1.5"
                 >
                   <XCircle className="w-3.5 h-3.5" /> Falso positivo
                 </button>
                 <button
                   onClick={() => handleStatus('ignored')}
-                  className="btn-secondary text-xs"
+                  className="btn-secondary touch-row text-xs"
                 >
                   Ignorar
                 </button>
@@ -235,7 +235,7 @@ export function FindingCard({ finding }: Props) {
             {finding.status !== 'open' && (
               <button
                 onClick={() => handleStatus('open')}
-                className="btn-secondary text-xs"
+                className="btn-secondary touch-row text-xs"
               >
                 Reabrir
               </button>

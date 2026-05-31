@@ -137,7 +137,6 @@ export interface UrlScanRequest {
   apiUrl?: string;
   customHeaders?: Record<string, string>;
   depth?: 'quick' | 'normal' | 'deep';
-  authorized: boolean;
 }
 
 export interface ScanResult {

@@ -139,19 +139,19 @@ export function ScanResult() {
   const isRunning = currentScan.status === 'running' || currentScan.status === 'pending';
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 sm:space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div className="flex items-start gap-3">
-          <button onClick={() => navigate(-1)} className="btn-secondary p-2 mt-1">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <button onClick={() => navigate(-1)} className="btn-secondary flex-shrink-0 p-2 mt-0.5">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               {currentScan.type === 'url'
-                ? <Globe className="w-5 h-5 text-cyan-400" />
-                : <FolderOpen className="w-5 h-5 text-violet-400" />}
-              <h1 className="text-xl font-bold text-white">{currentScan.projectName}</h1>
+                ? <Globe className="h-5 w-5 flex-shrink-0 text-cyan-400" />
+                : <FolderOpen className="h-5 w-5 flex-shrink-0 text-violet-400" />}
+              <h1 className="min-w-0 truncate mobile-section-title">{currentScan.projectName}</h1>
               <span className={`text-xs px-2 py-0.5 rounded-full ${
                 currentScan.status === 'completed' ? 'bg-green-900/30 text-green-400' :
                 currentScan.status === 'running' ? 'bg-blue-900/30 text-blue-400' :
@@ -160,27 +160,27 @@ export function ScanResult() {
                 {currentScan.status}
               </span>
             </div>
-            <div className="text-sm text-gray-500 mt-0.5">{currentScan.target}</div>
+            <div className="mt-0.5 break-all text-sm text-gray-500">{currentScan.target}</div>
             <div className="text-xs text-gray-600 mt-0.5">
               {formatDate(currentScan.startedAt)} · {formatDuration(currentScan.durationMs)}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:justify-end">
           {currentScan.status === 'completed' && (
             <>
-              <Link to={`/scans/${currentScan.id}/threat-model`} className="btn-secondary flex items-center gap-2">
+              <Link to={`/scans/${currentScan.id}/threat-model`} className="btn-secondary touch-row flex flex-1 items-center justify-center gap-2 sm:flex-none">
                 <ShieldAlert className="w-4 h-4" />
                 Threat Model
               </Link>
-              <Link to={`/scans/${currentScan.id}/defense-depth`} className="btn-secondary flex items-center gap-2">
+              <Link to={`/scans/${currentScan.id}/defense-depth`} className="btn-secondary touch-row flex flex-1 items-center justify-center gap-2 sm:flex-none">
                 <ShieldCheck className="w-4 h-4" />
                 Defense Depth
               </Link>
               <ExportReportButton scanId={currentScan.id} />
             </>
           )}
-          <button onClick={loadScan} className="btn-secondary p-2">
+          <button onClick={loadScan} className="btn-secondary touch-row flex items-center justify-center p-2">
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
@@ -196,8 +196,8 @@ export function ScanResult() {
 
       {/* Summary */}
       {!isRunning && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-          <div className="card col-span-1 md:col-span-1 flex flex-col items-center justify-center">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
+          <div className="card col-span-2 flex flex-col items-center justify-center sm:col-span-1">
             <SecurityScoreCard score={currentScan.score} size="sm" />
           </div>
           {[
@@ -217,7 +217,7 @@ export function ScanResult() {
 
       {/* Tech stack + Category chart */}
       {!isRunning && currentScan.techStack?.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
           <div className="card">
             <div className="text-sm font-semibold text-gray-300 mb-3">Stack Detectada</div>
             <TechStackDetected techStack={currentScan.techStack} />
@@ -233,22 +233,22 @@ export function ScanResult() {
       {!isRunning && (
         <div>
           {/* Filters */}
-          <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[auto_minmax(14rem,20rem)_repeat(3,auto)] lg:items-center">
             <div className="flex items-center gap-2 text-sm font-semibold text-gray-300">
               <Filter className="w-4 h-4 text-violet-400" />
               {filtered.length} achados
             </div>
-            <div className="flex-1 relative max-w-xs">
+            <div className="relative min-w-0">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
-                className="input pl-9 text-sm py-1.5"
+                className="input pl-9 text-sm py-2"
                 placeholder="Buscar..."
                 value={filter.search}
                 onChange={e => setFilter(f => ({ ...f, search: e.target.value }))}
               />
             </div>
             <select
-              className="input py-1.5 text-sm w-auto"
+              className="input py-2 text-sm"
               value={filter.severity}
               onChange={e => setFilter(f => ({ ...f, severity: e.target.value }))}
             >
@@ -258,7 +258,7 @@ export function ScanResult() {
               ))}
             </select>
             <select
-              className="input py-1.5 text-sm w-auto"
+              className="input py-2 text-sm"
               value={filter.category}
               onChange={e => setFilter(f => ({ ...f, category: e.target.value }))}
             >
@@ -266,7 +266,7 @@ export function ScanResult() {
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <select
-              className="input py-1.5 text-sm w-auto"
+              className="input py-2 text-sm"
               value={filter.status}
               onChange={e => setFilter(f => ({ ...f, status: e.target.value }))}
             >

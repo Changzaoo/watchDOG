@@ -15,17 +15,17 @@ export function ExportReportButton({ scanId }: Props) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative flex-1 sm:flex-none">
       <button
         onClick={() => setOpen(!open)}
-        className="btn-secondary flex items-center gap-2"
+        className="btn-secondary touch-row flex w-full items-center justify-center gap-2 sm:w-auto"
       >
         <Download className="w-4 h-4" />
         Exportar
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 z-20 w-48 bg-dark-850 border border-dark-800 rounded-xl shadow-xl overflow-hidden animate-fade-in">
+        <div className="absolute right-0 top-12 z-20 w-52 overflow-hidden rounded-lg border border-dark-800 bg-dark-850 shadow-xl animate-fade-in">
           <button
             onClick={() => exportAs('json')}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-800 transition-colors"

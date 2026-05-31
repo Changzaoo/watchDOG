@@ -26,61 +26,114 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-60 bg-dark-850 border-r border-dark-800 flex flex-col h-screen sticky top-0 flex-shrink-0">
-      {/* Logo */}
-      <div className="p-4 border-b border-dark-800">
-        <div className="flex items-center gap-3">
-          <AppLogo className="w-10 h-10 rounded-lg bg-dark-900/60 ring-1 ring-blue-500/30" />
-          <div>
-            <div className="font-bold text-white text-sm tracking-wide">watchDOG</div>
-            <div className="text-xs text-gray-500">Security Auditor</div>
+    <>
+      <header className="fixed inset-x-0 top-0 z-30 border-b border-dark-800 bg-dark-850/95 backdrop-blur md:hidden">
+        <div className="flex h-16 items-center justify-between px-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <AppLogo className="h-9 w-9 flex-shrink-0 rounded-lg bg-dark-900/60 ring-1 ring-blue-500/30" />
+            <div className="min-w-0">
+              <div className="truncate text-sm font-bold tracking-wide text-white">watchDOG</div>
+              <div className="truncate text-xs text-gray-500">{authUser?.email || 'Security Auditor'}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-lg border',
+                backendOnline
+                  ? 'border-green-800/40 bg-green-900/20 text-green-400'
+                  : 'border-red-800/40 bg-red-900/20 text-red-400'
+              )}
+              title={backendOnline ? 'Backend online' : 'Backend offline'}
+            >
+              {backendOnline ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+            </div>
+            {authUser && (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-dark-800 bg-dark-900/70 text-gray-300"
+                title="Sair"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Nav */}
-      <nav className="flex-1 p-3 space-y-1">
-        {NAV_ITEMS.map(({ to, label, icon: Icon, exact }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={exact}
-            className={({ isActive }) => cn('sidebar-item', isActive && 'active')}
-          >
-            <Icon className="w-4 h-4" />
-            <span className="text-sm">{label}</span>
-          </NavLink>
-        ))}
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-dark-800 bg-dark-850/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur md:hidden">
+        <div className="mx-auto flex max-w-md gap-1">
+          {NAV_ITEMS.map(({ to, label, icon: Icon, exact }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={exact}
+              className={({ isActive }) => cn('mobile-nav-item', isActive && 'active')}
+            >
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              <span className="truncate">{label}</span>
+            </NavLink>
+          ))}
+        </div>
       </nav>
 
-      {/* Backend status */}
-      <div className="p-4 border-t border-dark-800">
-        {authUser && (
-          <div className="mb-3 rounded-lg border border-dark-800 bg-dark-900/60 p-3">
-            <div className="text-xs text-gray-500">Sessao</div>
-            <div className="text-xs text-gray-300 truncate mt-1">{authUser.email || 'Usuario autenticado'}</div>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="mt-3 w-full btn-secondary py-1.5 text-xs flex items-center justify-center gap-2"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              Sair
-            </button>
+      <aside className="sticky top-0 hidden h-screen w-60 flex-shrink-0 flex-col border-r border-dark-800 bg-dark-850 md:flex">
+        {/* Logo */}
+        <div className="p-4 border-b border-dark-800">
+          <div className="flex items-center gap-3">
+            <AppLogo className="w-10 h-10 rounded-lg bg-dark-900/60 ring-1 ring-blue-500/30" />
+            <div>
+              <div className="font-bold text-white text-sm tracking-wide">watchDOG</div>
+              <div className="text-xs text-gray-500">Security Auditor</div>
+            </div>
           </div>
-        )}
-        <div className={cn(
-          'flex items-center gap-2 text-xs px-3 py-2 rounded-lg',
-          backendOnline
-            ? 'bg-green-900/20 text-green-400 border border-green-800/30'
-            : 'bg-red-900/20 text-red-400 border border-red-800/30'
-        )}>
-          {backendOnline
-            ? <><Wifi className="w-3 h-3" /> Backend online</>
-            : <><WifiOff className="w-3 h-3" /> Backend offline</>}
         </div>
-        <div className="mt-2 text-xs text-gray-600 text-center">v1.0.0</div>
-      </div>
-    </aside>
+
+        {/* Nav */}
+        <nav className="flex-1 p-3 space-y-1">
+          {NAV_ITEMS.map(({ to, label, icon: Icon, exact }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={exact}
+              className={({ isActive }) => cn('sidebar-item', isActive && 'active')}
+            >
+              <Icon className="w-4 h-4" />
+              <span className="text-sm">{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Backend status */}
+        <div className="p-4 border-t border-dark-800">
+          {authUser && (
+            <div className="mb-3 rounded-lg border border-dark-800 bg-dark-900/60 p-3">
+              <div className="text-xs text-gray-500">Sessao</div>
+              <div className="text-xs text-gray-300 truncate mt-1">{authUser.email || 'Usuario autenticado'}</div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="mt-3 w-full btn-secondary py-1.5 text-xs flex items-center justify-center gap-2"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sair
+              </button>
+            </div>
+          )}
+          <div className={cn(
+            'flex items-center gap-2 text-xs px-3 py-2 rounded-lg',
+            backendOnline
+              ? 'bg-green-900/20 text-green-400 border border-green-800/30'
+              : 'bg-red-900/20 text-red-400 border border-red-800/30'
+          )}>
+            {backendOnline
+              ? <><Wifi className="w-3 h-3" /> Backend online</>
+              : <><WifiOff className="w-3 h-3" /> Backend offline</>}
+          </div>
+          <div className="mt-2 text-xs text-gray-600 text-center">v1.0.0</div>
+        </div>
+      </aside>
+    </>
   );
 }

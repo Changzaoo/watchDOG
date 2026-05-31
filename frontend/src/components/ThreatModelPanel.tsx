@@ -41,7 +41,7 @@ function ListBlock({
 export function ThreatModelPanel({ model }: Props) {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
         <ListBlock title="Ativos Críticos" icon={Database} items={model.assets} accent="text-cyan-400" />
         <ListBlock title="Perfis de Atacante" icon={Users} items={model.attackers} accent="text-orange-400" />
         <ListBlock title="Superfícies de Ataque" icon={Crosshair} items={model.attackSurfaces} accent="text-red-400" />
@@ -63,9 +63,9 @@ export function ThreatModelPanel({ model }: Props) {
                   <span className="text-xs font-mono text-violet-300 bg-violet-900/30 px-2 py-0.5 rounded">
                     {gap.ruleId}
                   </span>
-                  <span className="text-sm font-medium text-gray-200">{gap.title}</span>
+                  <span className="min-w-0 text-sm font-medium text-gray-200">{gap.title}</span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 text-sm">
+                <div className="grid grid-cols-1 gap-3 mt-3 text-sm md:grid-cols-3">
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Controle quebrado</div>
                     <div className="text-gray-300">{gap.brokenControl}</div>

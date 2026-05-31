@@ -36,12 +36,12 @@ export function DefenseDepthPanel({ layers }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {(Object.keys(STATUS_META) as DefenseLayerStatus[]).map(status => {
           const meta = STATUS_META[status];
           const Icon = meta.icon;
           return (
-            <div key={status} className={cn('rounded-lg border p-4', meta.className)}>
+            <div key={status} className={cn('rounded-lg border p-3 sm:p-4', meta.className)}>
               <div className="flex items-center gap-2 text-xs font-medium">
                 <Icon className="w-4 h-4" />
                 {meta.label}
@@ -52,18 +52,18 @@ export function DefenseDepthPanel({ layers }: Props) {
         })}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {sorted.map(layer => {
           const meta = STATUS_META[layer.status];
           const Icon = meta.icon;
           return (
-            <div key={layer.id} className="rounded-lg border border-dark-800 bg-dark-850 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
+            <div key={layer.id} className="rounded-lg border border-dark-800 bg-dark-850 p-3 sm:p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
                   <div className="font-medium text-gray-200">{layer.name}</div>
                   <div className="text-sm text-gray-500 mt-1">{layer.summary}</div>
                 </div>
-                <span className={cn('text-xs px-2 py-1 rounded-full border flex items-center gap-1.5 flex-shrink-0', meta.className)}>
+                <span className={cn('text-xs px-2 py-1 rounded-full border flex w-fit items-center gap-1.5 flex-shrink-0', meta.className)}>
                   <Icon className="w-3.5 h-3.5" />
                   {meta.label}
                 </span>

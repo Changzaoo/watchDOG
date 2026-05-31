@@ -36,8 +36,8 @@ export function FixPromptPanel({ scan, findings }: Props) {
 
   return (
     <div className="card space-y-3">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-semibold text-gray-200">
             <Wand2 className="w-4 h-4 text-cyan-400" />
             Prompt para corrigir vulnerabilidades
@@ -46,19 +46,19 @@ export function FixPromptPanel({ scan, findings }: Props) {
             Gerado a partir de {fixableCount || findings.length} achados para orientar correcoes no codigo, headers e configuracoes.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={copyPrompt} className="btn-secondary text-xs flex items-center gap-1.5">
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center">
+          <button onClick={copyPrompt} className="btn-secondary touch-row text-xs flex items-center justify-center gap-1.5">
             {copied ? <CheckCircle className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
             {copied ? 'Copiado!' : 'Copiar prompt'}
           </button>
-          <button onClick={downloadPrompt} className="btn-secondary text-xs flex items-center gap-1.5">
+          <button onClick={downloadPrompt} className="btn-secondary touch-row text-xs flex items-center justify-center gap-1.5">
             <Download className="w-3.5 h-3.5" />
             Baixar .txt
           </button>
         </div>
       </div>
 
-      <pre className="font-mono text-xs bg-dark-900 rounded-lg p-4 text-cyan-100 overflow-x-auto whitespace-pre-wrap max-h-96">
+      <pre className="font-mono text-xs bg-dark-900 rounded-lg p-3 sm:p-4 text-cyan-100 overflow-x-auto whitespace-pre-wrap max-h-96">
         {prompt}
       </pre>
     </div>

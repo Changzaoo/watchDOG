@@ -24,19 +24,19 @@ function ScanCard({ scan }: { scan: Scan }) {
       onClick={() => navigate(`/scans/${scan.id}`)}
       className="card hover:border-dark-700 cursor-pointer transition-all group"
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex min-w-0 items-center gap-2">
           {scan.type === 'url' ? <Globe className="w-4 h-4 text-cyan-400" /> : <FolderOpen className="w-4 h-4 text-violet-400" />}
-          <span className="font-semibold text-gray-200 group-hover:text-white transition-colors truncate max-w-[180px]">
+          <span className="min-w-0 truncate font-semibold text-gray-200 transition-colors group-hover:text-white">
             {scan.projectName}
           </span>
         </div>
-        <span className={`text-lg font-bold`} style={{ color: scoreColor(scan.score) }}>
+        <span className="flex-shrink-0 text-lg font-bold" style={{ color: scoreColor(scan.score) }}>
           {scan.score}
         </span>
       </div>
       <div className="text-xs text-gray-500 truncate mb-3">{scan.target}</div>
-      <div className="flex items-center gap-3 text-xs">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         {summary.critical > 0 && (
           <span className="flex items-center gap-1 text-red-400">
             <AlertTriangle className="w-3 h-3" /> {summary.critical} críticos
@@ -45,7 +45,7 @@ function ScanCard({ scan }: { scan: Scan }) {
         {summary.high > 0 && (
           <span className="text-orange-400">{summary.high} altos</span>
         )}
-        <span className="text-gray-600 ml-auto">{formatDate(scan.startedAt)}</span>
+        <span className="text-gray-600 sm:ml-auto">{formatDate(scan.startedAt)}</span>
       </div>
     </div>
   );
@@ -82,12 +82,12 @@ export function Dashboard() {
   const displayScore = visibleScans.length === 0 ? 62 : avgScore;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 sm:space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <AppLogo className="w-9 h-9 rounded-lg bg-dark-850 ring-1 ring-blue-500/30" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="mobile-page-title flex items-center gap-3">
+            <AppLogo className="h-8 w-8 rounded-lg bg-dark-850 ring-1 ring-blue-500/30 sm:h-9 sm:w-9" />
             Dashboard
           </h1>
           <p className="text-gray-500 text-sm mt-1">
@@ -96,7 +96,7 @@ export function Dashboard() {
         </div>
         <button
           onClick={() => navigate('/scan/url')}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary touch-row flex w-full items-center justify-center gap-2 sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           Novo Scan
@@ -111,8 +111,8 @@ export function Dashboard() {
       )}
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card text-center">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        <div className="card col-span-2 text-center sm:col-span-1">
           <SecurityScoreCard score={displayScore} />
         </div>
 
@@ -122,14 +122,14 @@ export function Dashboard() {
           { label: 'Médios', value: displaySummary.medium, color: 'text-yellow-400', bg: 'bg-yellow-900/20' },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={`card text-center ${bg} border-0`}>
-            <div className={`text-4xl font-bold ${color} mb-1`}>{value}</div>
+            <div className={`text-3xl sm:text-4xl font-bold ${color} mb-1`}>{value}</div>
             <div className="text-sm text-gray-500">{label}</div>
           </div>
         ))}
       </div>
 
       {/* Charts + Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         <div className="card md:col-span-1">
           <div className="text-sm font-semibold text-gray-300 mb-4 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-violet-400" />
@@ -143,14 +143,14 @@ export function Dashboard() {
             <Clock className="w-4 h-4 text-cyan-400" />
             Estatísticas Gerais
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-4">
             {[
               { label: 'Total de Scans', value: visibleScans.length || '(demo)' },
               { label: 'Total de Achados', value: displaySummary.total },
               { label: 'Score Médio', value: displayScore + '/100' },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-dark-800 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-gray-200">{value}</div>
+              <div key={label} className="rounded-lg bg-dark-800 p-3 text-center sm:p-4">
+                <div className="text-xl font-bold text-gray-200 sm:text-2xl">{value}</div>
                 <div className="text-xs text-gray-500 mt-1">{label}</div>
               </div>
             ))}
@@ -181,11 +181,11 @@ export function Dashboard() {
       {/* Quick Actions */}
       <div>
         <h2 className="text-sm font-semibold text-gray-400 mb-3">Ações Rápidas</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {localScansEnabled && (
           <button
             onClick={() => navigate('/scan/local')}
-            className="card hover:border-violet-800/50 cursor-pointer transition-all group text-left"
+            className="card touch-row hover:border-violet-800/50 cursor-pointer transition-all group text-left"
           >
             <FolderOpen className="w-6 h-6 text-violet-400 mb-2" />
             <div className="font-semibold text-gray-200">Analisar Projeto Local</div>
@@ -194,7 +194,7 @@ export function Dashboard() {
           )}
           <button
             onClick={() => navigate('/scan/url')}
-            className="card hover:border-cyan-800/50 cursor-pointer transition-all group text-left"
+            className="card touch-row hover:border-cyan-800/50 cursor-pointer transition-all group text-left"
           >
             <Globe className="w-6 h-6 text-cyan-400 mb-2" />
             <div className="font-semibold text-gray-200">Analisar URL Online</div>
@@ -202,7 +202,7 @@ export function Dashboard() {
           </button>
           <button
             onClick={() => navigate('/history')}
-            className="card hover:border-emerald-800/50 cursor-pointer transition-all group text-left"
+            className="card touch-row hover:border-emerald-800/50 cursor-pointer transition-all group text-left"
           >
             <Clock className="w-6 h-6 text-emerald-400 mb-2" />
             <div className="font-semibold text-gray-200">Ver Histórico</div>
@@ -215,7 +215,7 @@ export function Dashboard() {
       {visibleScans.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold text-gray-400 mb-3">Scans Recentes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             {visibleScans.slice(0, 6).map(scan => (
               <ScanCard key={scan.id} scan={scan} />
             ))}

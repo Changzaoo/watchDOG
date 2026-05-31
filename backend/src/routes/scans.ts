@@ -40,7 +40,6 @@ const urlScanSchema = z.object({
   url: z.string().url(),
   apiUrl: z.string().url().optional(),
   depth: z.enum(['quick', 'normal', 'deep']).default('normal'),
-  authorized: z.boolean().refine(v => v === true, { message: 'Você deve confirmar autorização' }),
 });
 
 async function applyRuleConfigs<T extends { ruleId: string; severity: string }>(findings: T[]): Promise<T[]> {

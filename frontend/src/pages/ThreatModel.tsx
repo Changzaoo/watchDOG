@@ -47,26 +47,26 @@ export function ThreatModel() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex items-start gap-3">
-          <button onClick={() => navigate(-1)} className="btn-secondary p-2 mt-1">
+    <div className="space-y-5 sm:space-y-6 animate-fade-in">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <button onClick={() => navigate(-1)} className="btn-secondary flex-shrink-0 p-2 mt-0.5">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <div className="min-w-0">
+            <h1 className="mobile-section-title flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-orange-400" />
               Threat Model
             </h1>
-            <p className="text-sm text-gray-500 mt-1">{scan?.projectName || id}</p>
+            <p className="mt-1 truncate text-sm text-gray-500">{scan?.projectName || id}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link to={`/scans/${id}/defense-depth`} className="btn-secondary flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <Link to={`/scans/${id}/defense-depth`} className="btn-secondary touch-row flex flex-1 items-center justify-center gap-2 sm:flex-none">
             <Layers className="w-4 h-4" />
             Defense Depth
           </Link>
-          <button onClick={load} className="btn-secondary p-2">
+          <button onClick={load} className="btn-secondary touch-row flex items-center justify-center p-2">
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>

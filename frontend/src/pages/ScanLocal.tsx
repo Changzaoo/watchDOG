@@ -40,14 +40,14 @@ export function ScanLocal() {
   ];
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="btn-secondary p-2">
+    <div className="mx-auto max-w-2xl space-y-5 sm:space-y-6 animate-fade-in">
+      <div className="flex items-start gap-3">
+        <button onClick={() => navigate(-1)} className="btn-secondary flex-shrink-0 p-2">
           <ArrowLeft className="w-4 h-4" />
         </button>
-        <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <FolderOpen className="w-5 h-5 text-violet-400" />
+        <div className="min-w-0">
+          <h1 className="mobile-section-title flex items-center gap-2">
+            <FolderOpen className="h-5 w-5 flex-shrink-0 text-violet-400" />
             Análise de Projeto Local
           </h1>
           <p className="text-gray-500 text-sm">Informe o caminho do projeto para análise completa</p>
@@ -56,7 +56,7 @@ export function ScanLocal() {
 
       <div className="card space-y-2">
         <h3 className="text-sm font-semibold text-gray-300">O que será analisado:</h3>
-        <div className="grid grid-cols-2 gap-1.5 text-xs text-gray-400">
+        <div className="grid grid-cols-1 gap-1.5 text-xs text-gray-400 sm:grid-cols-2">
           {[
             '✓ Secrets e credenciais expostas',
             '✓ Dependências vulneráveis',
@@ -100,7 +100,7 @@ export function ScanLocal() {
                 key={ex}
                 type="button"
                 onClick={() => setProjectPath(ex)}
-                className="block text-xs text-violet-500 hover:text-violet-400 font-mono transition-colors"
+                className="block max-w-full truncate text-left font-mono text-xs text-violet-500 transition-colors hover:text-violet-400"
               >
                 {ex}
               </button>
@@ -131,7 +131,7 @@ export function ScanLocal() {
         <button
           type="submit"
           disabled={loading || !projectPath || (backendOnline && !localScansEnabled)}
-          className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-primary touch-row w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
             <>

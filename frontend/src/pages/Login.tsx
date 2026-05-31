@@ -34,11 +34,11 @@ export function Login({ onAuthenticated }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-dark-900 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-dark-900 flex items-center justify-center px-3 py-6 sm:p-6">
       <div className="w-full max-w-md space-y-5 animate-fade-in">
         <div className="text-center">
           <AppLogo className="w-16 h-16 mx-auto rounded-xl bg-dark-850 ring-1 ring-blue-500/30" />
-          <h1 className="text-2xl font-bold text-white mt-4">watchDOG</h1>
+          <h1 className="mobile-page-title mt-4">watchDOG</h1>
           <p className="text-sm text-gray-500 mt-1">Acesso protegido pelo Firebase</p>
         </div>
 
@@ -90,7 +90,7 @@ export function Login({ onAuthenticated }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary touch-row w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>

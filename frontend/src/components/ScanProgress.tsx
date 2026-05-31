@@ -9,18 +9,18 @@ interface Props {
 export function ScanProgress({ step, progress }: Props) {
   return (
     <div className="card space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <div className="relative">
           <AppLogo className="w-9 h-9 rounded-lg bg-dark-900/60 ring-1 ring-blue-500/30" />
           <div className="absolute -top-1 -right-1">
             <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
           </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="font-semibold text-gray-200">Escaneando...</div>
-          <div className="text-sm text-gray-400">{step}</div>
+          <div className="break-words text-sm text-gray-400">{step}</div>
         </div>
-        <div className="ml-auto text-2xl font-bold text-violet-400">{progress}%</div>
+        <div className="ml-auto flex-shrink-0 text-xl font-bold text-violet-400 sm:text-2xl">{progress}%</div>
       </div>
 
       <div className="progress-bar">
@@ -30,7 +30,7 @@ export function ScanProgress({ step, progress }: Props) {
         />
       </div>
 
-      <div className="grid grid-cols-6 gap-1">
+      <div className="grid grid-cols-6 gap-1 sm:grid-cols-12">
         {Array.from({ length: 12 }).map((_, i) => (
           <div
             key={i}

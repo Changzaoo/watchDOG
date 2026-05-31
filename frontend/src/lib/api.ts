@@ -181,10 +181,10 @@ export const api = {
       body: JSON.stringify({ path, projectName }),
     }),
 
-  startUrlScan: (url: string, opts?: { depth?: string; authorized: boolean }) =>
+  startUrlScan: (url: string, opts?: { depth?: string }) =>
     fetchJson<{ scanId: string }>('/scans/url', {
       method: 'POST',
-      body: JSON.stringify({ url, depth: opts?.depth || 'normal', authorized: opts?.authorized }),
+      body: JSON.stringify({ url, depth: opts?.depth || 'normal' }),
     }),
 
   updateFindingStatus: (id: string, status: string) =>
