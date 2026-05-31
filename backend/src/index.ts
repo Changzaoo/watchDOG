@@ -25,12 +25,26 @@ const defaultCorsOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
+  'https://watchdog-chi.vercel.app',
+];
+const defaultCorsOriginPatterns = [
+  /^https:\/\/watchdog-[a-z0-9-]+-changzaoos-projects\.vercel\.app$/i,
 ];
 const configuredCorsOrigins = (process.env.CORS_ORIGINS || '')
   .split(',')
   .map(origin => origin.trim())
   .filter(Boolean);
 const allowedCorsOrigins = new Set([...defaultCorsOrigins, ...configuredCorsOrigins]);
+
+function isAllowedCorsOrigin(origin: string): boolean {
+  try {
+    const normalizedOrigin = new URL(origin).origin;
+    return allowedCorsOrigins.has(normalizedOrigin) ||
+      defaultCorsOriginPatterns.some(pattern => pattern.test(normalizedOrigin));
+  } catch {
+    return false;
+  }
+}
 
 // Security middleware
 app.use(helmet({
@@ -40,8 +54,9 @@ app.use(helmet({
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedCorsOrigins.has(origin)) return callback(null, true);
-    return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+    if (!origin || isAllowedCorsOrigin(origin)) return callback(null, true);
+    console.warn(`Origin not allowed by CORS: ${origin}`);
+    return callback(null, false);
   },
   credentials: true,
 }));
