@@ -17,7 +17,9 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@sentinelscope/shared": ["../shared/src/index.ts"],
+      "@sentinelscope/shared/*": ["../shared/src/*"]
     }
   },
   "include": ["src"],
