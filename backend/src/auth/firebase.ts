@@ -43,11 +43,7 @@ function normalizePrivateKey(value?: string): string {
     .replace(/\\n/g, '\n');
 }
 
-function parseServiceAccountJson(): FirebaseAdminConfig | null {
-  const rawJson = env('FIREBASE_SERVICE_ACCOUNT_JSON') ||
-    decodeBase64(env('FIREBASE_SERVICE_ACCOUNT_JSON_BASE64'));
-  if (!rawJson) return null;
-
+function parseServiceAccountCandidate(rawJson: string): FirebaseAdminConfig | null {
   try {
     const parsed = JSON.parse(rawJson) as Record<string, string | undefined>;
     const projectId = parsed.project_id || parsed.projectId || '';
@@ -59,6 +55,20 @@ function parseServiceAccountJson(): FirebaseAdminConfig | null {
   } catch {
     return null;
   }
+}
+
+function parseServiceAccountJson(): FirebaseAdminConfig | null {
+  const candidates = [
+    env('FIREBASE_SERVICE_ACCOUNT_JSON'),
+    decodeBase64(env('FIREBASE_SERVICE_ACCOUNT_JSON_BASE64')),
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const parsed = parseServiceAccountCandidate(candidate);
+    if (parsed) return parsed;
+  }
+
+  return null;
 }
 
 function getFirebaseAdminConfig(): FirebaseAdminConfig | null {
