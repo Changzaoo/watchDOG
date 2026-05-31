@@ -3,7 +3,7 @@ services:
     runtime: node
     name: watchdog-api
     plan: free
-    buildCommand: npm ci && npm run build --workspace=shared && npm run build --workspace=scanner && npm run prisma:generate --workspace=backend && npm run build --workspace=backend
+    buildCommand: npm ci --include=dev && npm run build --workspace=shared && npm run build --workspace=scanner && npm run prisma:generate --workspace=backend && npm run build --workspace=backend
     preDeployCommand: npm run prisma:migrate:deploy --workspace=backend
     startCommand: npm run start --workspace=backend
     healthCheckPath: /health
