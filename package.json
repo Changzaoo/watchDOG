@@ -1,0 +1,21 @@
+{
+  "name": "watchdog",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["shared", "scanner", "backend", "frontend"],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:desktop": "echo Open http://localhost:5173 after running npm run dev",
+    "build": "npm run build --workspace=shared && npm run build --workspace=scanner && npm run build --workspace=backend && npm run build --workspace=frontend",
+    "start": "npm run start --workspace=backend",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "setup": "npm install && npm run build --workspace=shared && npm run prisma:generate --workspace=backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

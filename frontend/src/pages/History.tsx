@@ -1,0 +1,85 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { History as HistoryIcon, Globe, FolderOpen, AlertTriangle } from 'lucide-react';
+import { Scan, ScanSummary } from '@sentinelscope/shared';
+import { useAppStore } from '../store/useAppStore';
+import { api } from '../lib/api';
+import { SecurityScoreCard } from '../components/SecurityScoreCard';
+import { formatDate, formatDuration } from '../lib/utils';
+
+export function History() {
+  const { scans, setScans, backendOnline } = useAppStore();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (backendOnline) {
+      api.getScans().then(setScans).catch(() => {});
+    }
+  }, [backendOnline]);
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <HistoryIcon className="w-7 h-7 text-violet-400" />
+            Histórico de Scans
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">{scans.length} scans realizados</p>
+        </div>
+        <button onClick={() => navigate('/scan/new')} className="btn-primary">
+          + Novo Scan
+        </button>
+      </div>
+
+      {scans.length === 0 ? (
+        <div className="card text-center py-16">
+          <HistoryIcon className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+          <p className="text-gray-400 font-medium">Nenhum scan realizado ainda</p>
+          <p className="text-gray-600 text-sm mt-1">Inicie seu primeiro scan clicando no botão acima</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {scans.map(scan => {
+            const summary: ScanSummary = typeof scan.summary === 'string' ? JSON.parse(scan.summary) : scan.summary;
+            return (
+              <div
+                key={scan.id}
+                onClick={() => navigate(`/scans/${scan.id}`)}
+                className="card hover:border-dark-700 cursor-pointer transition-all flex items-center gap-4"
+              >
+                <div className="flex-shrink-0">
+                  <SecurityScoreCard score={scan.score} size="sm" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {scan.type === 'url'
+                      ? <Globe className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                      : <FolderOpen className="w-4 h-4 text-violet-400 flex-shrink-0" />}
+                    <span className="font-semibold text-gray-200 truncate">{scan.projectName}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ml-auto flex-shrink-0 ${
+                      scan.status === 'completed' ? 'bg-green-900/30 text-green-400' :
+                      scan.status === 'running' ? 'bg-blue-900/30 text-blue-400 animate-pulse' :
+                      'bg-red-900/30 text-red-400'
+                    }`}>{scan.status}</span>
+                  </div>
+                  <div className="text-xs text-gray-600 truncate mt-0.5">{scan.target}</div>
+                  <div className="flex items-center gap-4 mt-1.5 text-xs">
+                    <span className="text-gray-600">{formatDate(scan.startedAt)}</span>
+                    <span className="text-gray-600">{formatDuration(scan.durationMs)}</span>
+                    {summary.critical > 0 && (
+                      <span className="flex items-center gap-1 text-red-400">
+                        <AlertTriangle className="w-3 h-3" /> {summary.critical} críticos
+                      </span>
+                    )}
+                    <span className="text-gray-500">{summary.total} achados</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
