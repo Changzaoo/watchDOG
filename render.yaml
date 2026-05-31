@@ -15,7 +15,7 @@ services:
       - key: ENABLE_LOCAL_SCANS
         value: "false"
       - key: CORS_ORIGINS
-        sync: false
+        value: https://watchdog-chi.vercel.app
     disk:
       name: watchdog-data
       mountPath: /var/data
