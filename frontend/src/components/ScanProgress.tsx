@@ -1,4 +1,5 @@
-import { Shield, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { AppLogo } from './AppLogo';
 
 interface Props {
   step: string;
@@ -10,7 +11,7 @@ export function ScanProgress({ step, progress }: Props) {
     <div className="card space-y-4">
       <div className="flex items-center gap-3">
         <div className="relative">
-          <Shield className="w-8 h-8 text-violet-400" />
+          <AppLogo className="w-9 h-9 rounded-lg bg-dark-900/60 ring-1 ring-blue-500/30" />
           <div className="absolute -top-1 -right-1">
             <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
           </div>

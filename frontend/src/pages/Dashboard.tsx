@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, FolderOpen, Globe, Clock, TrendingUp, AlertTriangle, Plus } from 'lucide-react';
+import { FolderOpen, Globe, Clock, TrendingUp, AlertTriangle, Plus } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
+import { AppLogo } from '../components/AppLogo';
 import { SecurityScoreCard } from '../components/SecurityScoreCard';
 import { SeverityBadge } from '../components/SeverityBadge';
 import { SeverityChart } from '../components/SeverityChart';
@@ -86,7 +87,7 @@ export function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Shield className="w-7 h-7 text-violet-400" />
+            <AppLogo className="w-9 h-9 rounded-lg bg-dark-850 ring-1 ring-blue-500/30" />
             Dashboard
           </h1>
           <p className="text-gray-500 text-sm mt-1">
@@ -104,7 +105,7 @@ export function Dashboard() {
 
       {scans.length === 0 && (
         <div className="card border-dashed border-violet-800/50 bg-violet-900/5 text-center py-4">
-          <Shield className="w-8 h-8 text-violet-400 mx-auto mb-2 opacity-50" />
+          <AppLogo className="w-12 h-12 mx-auto mb-2 opacity-80" />
           <p className="text-gray-500 text-sm">Modo demo — dados simulados. Inicie seu primeiro scan!</p>
         </div>
       )}

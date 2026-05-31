@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
-  Shield, Globe, FolderOpen, AlertTriangle, Filter, Search,
+  Globe, FolderOpen, AlertTriangle, Filter, Search,
   ArrowLeft, RefreshCw, ShieldAlert, ShieldCheck
 } from 'lucide-react';
 import { Finding, Severity } from '@sentinelscope/shared';
@@ -15,6 +15,7 @@ import { FindingCard } from '../components/FindingCard';
 import { TechStackDetected } from '../components/TechStackDetected';
 import { CategoryChart } from '../components/CategoryChart';
 import { ExportReportButton } from '../components/ExportReportButton';
+import { AppLogo } from '../components/AppLogo';
 import { formatDate, formatDuration, severityLabel } from '../lib/utils';
 
 export function ScanResult() {
@@ -85,7 +86,7 @@ export function ScanResult() {
     return (
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center space-y-3">
-          <Shield className="w-12 h-12 text-violet-400 mx-auto animate-pulse" />
+          <AppLogo className="w-16 h-16 mx-auto animate-pulse" />
           <div className="text-gray-400">Carregando scan...</div>
         </div>
       </div>
@@ -250,7 +251,7 @@ export function ScanResult() {
           <div className="space-y-2">
             {filtered.length === 0 ? (
               <div className="card text-center py-10 text-gray-500">
-                <Shield className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <AppLogo className="w-14 h-14 mx-auto mb-3 opacity-40" />
                 {currentFindings.length === 0 ? 'Nenhum achado encontrado — ótimo!' : 'Nenhum achado corresponde aos filtros'}
               </div>
             ) : (
