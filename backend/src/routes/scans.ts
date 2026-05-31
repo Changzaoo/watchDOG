@@ -91,34 +91,48 @@ scansRouter.post('/local', async (req: Request, res: Response) => {
 
 // POST /api/scans/url
 scansRouter.post('/url', async (req: Request, res: Response) => {
-  const parsed = urlScanSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.flatten() });
+  try {
+    const body = { ...req.body };
+    if (typeof body.url === 'string') {
+      const trimmedUrl = body.url.trim();
+      body.url = /^https?:\/\//i.test(trimmedUrl) ? trimmedUrl : `https://${trimmedUrl}`;
+    }
+
+    const parsed = urlScanSchema.safeParse(body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.flatten() });
+    }
+
+    const { url, depth } = parsed.data;
+
+    // Security: validate URL (block SSRF, private IPs, localhost, cloud metadata)
+    const urlCheck = await validateScanUrlWithDns(url);
+    if (!urlCheck.valid) {
+      return res.status(400).json({ error: urlCheck.reason });
+    }
+    const safeUrl = urlCheck.normalizedUrl!;
+
+    const scan = await prisma.scan.create({
+      data: {
+        type: 'url',
+        target: safeUrl,
+        projectName: new URL(safeUrl).hostname,
+        status: 'running',
+        techStack: '[]',
+        summary: JSON.stringify({ total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 }),
+      },
+    });
+
+    res.json({ scanId: scan.id });
+
+    runUrlScan(scan.id, safeUrl, depth).catch(console.error);
+  } catch (err: any) {
+    console.error('Failed to start URL scan:', err);
+    return res.status(500).json({
+      error: 'Nao foi possivel iniciar o scan de URL',
+      detail: err?.message || String(err),
+    });
   }
-
-  const { url, depth } = parsed.data;
-
-  // Security: validate URL (block SSRF, private IPs, localhost, cloud metadata)
-  const urlCheck = await validateScanUrlWithDns(url);
-  if (!urlCheck.valid) {
-    return res.status(400).json({ error: urlCheck.reason });
-  }
-  const safeUrl = urlCheck.normalizedUrl!;
-
-  const scan = await prisma.scan.create({
-    data: {
-      type: 'url',
-      target: safeUrl,
-      projectName: new URL(safeUrl).hostname,
-      status: 'running',
-      techStack: '[]',
-      summary: JSON.stringify({ total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 }),
-    },
-  });
-
-  res.json({ scanId: scan.id });
-
-  runUrlScan(scan.id, safeUrl, depth).catch(console.error);
 });
 
 // GET /api/scans

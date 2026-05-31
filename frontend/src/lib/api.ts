@@ -13,6 +13,20 @@ export interface BackendHealth {
   timestamp: string;
 }
 
+function formatApiError(err: any, fallback: string): string {
+  if (!err) return fallback;
+  if (typeof err.error === 'string') {
+    return err.detail ? `${err.error}: ${err.detail}` : err.error;
+  }
+  const fieldErrors = err.error?.fieldErrors;
+  if (fieldErrors && typeof fieldErrors === 'object') {
+    const first = Object.values(fieldErrors).flat().find(Boolean);
+    if (first) return String(first);
+  }
+  if (typeof err.detail === 'string') return err.detail;
+  return fallback;
+}
+
 async function fetchJson<T>(url: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(BASE + url, {
     headers: { 'Content-Type': 'application/json' },
@@ -20,7 +34,7 @@ async function fetchJson<T>(url: string, opts?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || `HTTP ${res.status}`);
+    throw new Error(formatApiError(err, `HTTP ${res.status}`));
   }
   return res.json();
 }

@@ -21,7 +21,7 @@ export function ScanUrl() {
     if (!url.trim()) { setError('Informe a URL'); return; }
 
     let finalUrl = url.trim();
-    if (!finalUrl.startsWith('http')) finalUrl = 'https://' + finalUrl;
+    if (!/^https?:\/\//i.test(finalUrl)) finalUrl = 'https://' + finalUrl;
 
     try {
       new URL(finalUrl);
