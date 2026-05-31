@@ -85,9 +85,10 @@ app.use(cookieParser());
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 8,
+  skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many login attempts' },
+  message: { error: 'Muitas tentativas de login. Aguarde alguns minutos e tente novamente.' },
 });
 
 const apiLimiter = rateLimit({

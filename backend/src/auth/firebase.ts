@@ -107,23 +107,6 @@ export function isAuthRequired(): boolean {
   return process.env.NODE_ENV === 'production' || env('AUTH_REQUIRED') === 'true';
 }
 
-export function getAllowedEmails(): Set<string> {
-  return new Set(
-    env('AUTH_ALLOWED_EMAILS')
-      .split(',')
-      .map(email => email.trim().toLowerCase())
-      .filter(Boolean)
-  );
-}
-
-export function isEmailAllowed(email?: string): boolean {
-  const allowed = getAllowedEmails();
-  if (allowed.size === 0) {
-    return process.env.AUTH_ALLOW_ALL_USERS === 'true';
-  }
-  return Boolean(email && allowed.has(email.toLowerCase()));
-}
-
 export function getFirebaseAuth() {
   const adminConfig = getFirebaseAdminConfig();
   if (!adminConfig) {

@@ -224,7 +224,7 @@ Parametros esperados:
 - Pre-deploy command: `npm run prisma:migrate:deploy --workspace=backend`
 - Start command: `npm run start --workspace=backend`
 - Health check: `/health`
-- Firebase Auth: configure `FIREBASE_SERVICE_ACCOUNT_JSON` (preferido) ou `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64`; como alternativa use `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` e `FIREBASE_PRIVATE_KEY`. Configure tambem `FIREBASE_WEB_API_KEY`, `AUTH_REQUIRED=true` e, opcionalmente, `AUTH_ALLOWED_EMAILS`
+- Firebase Auth: configure `FIREBASE_SERVICE_ACCOUNT_JSON` (preferido) ou `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64`; como alternativa use `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` e `FIREBASE_PRIVATE_KEY`. Configure tambem `FIREBASE_WEB_API_KEY` e `AUTH_REQUIRED=true`. O backend aceita os usuarios validos do Firebase Auth e aplica limite progressivo de tentativas por email/IP com `LOGIN_MAX_FAILED_ATTEMPTS`, `LOGIN_ATTEMPT_WINDOW_MINUTES`, `LOGIN_LOCKOUT_MINUTES` e `LOGIN_MAX_LOCKOUT_MINUTES`
 - `DATABASE_URL`: `file:/var/data/watchdog.db`
 - `HOST`: `0.0.0.0`
 - `ENABLE_LOCAL_SCANS`: `false`

@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from 'express';
 import {
   getMissingAuthConfig,
   isAuthConfigured,
-  isEmailAllowed,
   isAuthRequired,
   SESSION_COOKIE_NAME,
   verifySessionCookie,
@@ -37,13 +36,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
   try {
     const decoded = await verifySessionCookie(sessionCookie);
-    if (!isEmailAllowed(decoded.email)) {
-      return res.status(403).json({
-        error: 'Usuario nao autorizado.',
-        detail: 'Defina AUTH_ALLOWED_EMAILS com seu email ou use AUTH_ALLOW_ALL_USERS=true conscientemente.',
-      });
-    }
-
     (req as any).authUser = {
       uid: decoded.uid,
       email: decoded.email,

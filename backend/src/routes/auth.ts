@@ -5,13 +5,19 @@ import {
   FirebasePasswordSignInError,
   getMissingAuthConfig,
   isAuthConfigured,
-  isEmailAllowed,
   isAuthRequired,
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_MS,
   signInWithPassword,
   verifySessionCookie,
 } from '../auth/firebase';
+import {
+  getLoginBlock,
+  getRequestIp,
+  normalizeLoginEmail,
+  recordLoginFailure,
+  recordLoginSuccess,
+} from '../auth/loginProtection';
 
 export const authRouter = Router();
 
@@ -28,36 +34,37 @@ function firebaseConfigError() {
   };
 }
 
-function authAllowlistError() {
-  return {
-    error: 'Nenhum usuario autorizado configurado.',
-    detail: 'Defina AUTH_ALLOWED_EMAILS com seu email ou use AUTH_ALLOW_ALL_USERS=true conscientemente.',
-  };
-}
-
 function firebaseLoginError(error: unknown) {
   if (!(error instanceof FirebasePasswordSignInError)) {
     return { status: 401, body: { error: 'Email ou senha invalidos.' } };
   }
 
   const code = error.code;
+  if (code === 'TOO_MANY_ATTEMPTS_TRY_LATER') {
+    return {
+      status: 429,
+      body: {
+        error: 'Muitas tentativas de login. Aguarde alguns minutos e tente novamente.',
+      },
+    };
+  }
+
   const messages: Record<string, { status: number; error: string; detail?: string }> = {
     EMAIL_NOT_FOUND: {
       status: 401,
-      error: 'Usuario nao encontrado no Firebase Auth.',
-      detail: 'Crie este email em Authentication > Users ou use uma conta existente.',
+      error: 'Email ou senha invalidos.',
     },
     INVALID_PASSWORD: {
       status: 401,
-      error: 'Senha invalida para este usuario.',
+      error: 'Email ou senha invalidos.',
     },
     INVALID_LOGIN_CREDENTIALS: {
       status: 401,
       error: 'Email ou senha invalidos.',
     },
     USER_DISABLED: {
-      status: 403,
-      error: 'Usuario desativado no Firebase Auth.',
+      status: 401,
+      error: 'Email ou senha invalidos.',
     },
     OPERATION_NOT_ALLOWED: {
       status: 503,
@@ -82,6 +89,18 @@ function firebaseLoginError(error: unknown) {
       error: mapped.error,
       ...(mapped.detail ? { detail: mapped.detail } : {}),
     },
+  };
+}
+
+function shouldRecordLoginFailure(error: unknown): boolean {
+  if (!(error instanceof FirebasePasswordSignInError)) return true;
+  return !['OPERATION_NOT_ALLOWED', 'API_KEY_INVALID'].includes(error.code);
+}
+
+function loginLockoutError(retryAfterSeconds: number) {
+  return {
+    error: 'Muitas tentativas de login. Aguarde alguns minutos e tente novamente.',
+    retryAfterSeconds,
   };
 }
 
@@ -121,10 +140,6 @@ authRouter.get('/me', async (req, res) => {
 
   try {
     const decoded = await verifySessionCookie(sessionCookie);
-    if (!isEmailAllowed(decoded.email)) {
-      return res.json({ authenticated: false, authConfigured: true, authRequired: true });
-    }
-
     return res.json({
       authenticated: true,
       authConfigured: true,
@@ -164,11 +179,17 @@ authRouter.post('/login', async (req, res) => {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
 
+  const email = normalizeLoginEmail(parsed.data.email);
+  const clientIp = getRequestIp(req);
+  const lock = getLoginBlock(email, clientIp);
+  if (lock) {
+    res.setHeader('Retry-After', String(lock.retryAfterSeconds));
+    return res.status(429).json(loginLockoutError(lock.retryAfterSeconds));
+  }
+
   try {
-    const login = await signInWithPassword(parsed.data.email, parsed.data.password);
-    if (!isEmailAllowed(login.email)) {
-      return res.status(403).json(authAllowlistError());
-    }
+    const login = await signInWithPassword(email, parsed.data.password);
+    recordLoginSuccess(email);
 
     const sessionCookie = await createSessionCookie(login.idToken);
     res.cookie(SESSION_COOKIE_NAME, sessionCookie, cookieOptions());
@@ -183,6 +204,15 @@ authRouter.post('/login', async (req, res) => {
       },
     });
   } catch (error) {
+    if (shouldRecordLoginFailure(error)) {
+      recordLoginFailure(email, clientIp);
+      const lockAfterFailure = getLoginBlock(email, clientIp);
+      if (lockAfterFailure) {
+        res.setHeader('Retry-After', String(lockAfterFailure.retryAfterSeconds));
+        return res.status(429).json(loginLockoutError(lockAfterFailure.retryAfterSeconds));
+      }
+    }
+
     const mapped = firebaseLoginError(error);
     return res.status(mapped.status).json(mapped.body);
   }
