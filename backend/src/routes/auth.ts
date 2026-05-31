@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   createSessionCookie,
+  FirebasePasswordSignInError,
   getMissingAuthConfig,
   isAuthConfigured,
   isEmailAllowed,
@@ -24,6 +25,56 @@ function firebaseConfigError() {
     error: 'Autenticacao Firebase nao configurada no backend.',
     detail: 'Configure a service account do Firebase e FIREBASE_WEB_API_KEY no ambiente do backend.',
     missing: getMissingAuthConfig(),
+  };
+}
+
+function firebaseLoginError(error: unknown) {
+  if (!(error instanceof FirebasePasswordSignInError)) {
+    return { status: 401, body: { error: 'Email ou senha invalidos.' } };
+  }
+
+  const code = error.code;
+  const messages: Record<string, { status: number; error: string; detail?: string }> = {
+    EMAIL_NOT_FOUND: {
+      status: 401,
+      error: 'Usuario nao encontrado no Firebase Auth.',
+      detail: 'Crie este email em Authentication > Users ou use uma conta existente.',
+    },
+    INVALID_PASSWORD: {
+      status: 401,
+      error: 'Senha invalida para este usuario.',
+    },
+    INVALID_LOGIN_CREDENTIALS: {
+      status: 401,
+      error: 'Email ou senha invalidos.',
+    },
+    USER_DISABLED: {
+      status: 403,
+      error: 'Usuario desativado no Firebase Auth.',
+    },
+    OPERATION_NOT_ALLOWED: {
+      status: 503,
+      error: 'Login por email e senha esta desativado no Firebase Auth.',
+      detail: 'Ative Email/Password em Authentication > Sign-in method.',
+    },
+    API_KEY_INVALID: {
+      status: 503,
+      error: 'FIREBASE_WEB_API_KEY invalida para este projeto Firebase.',
+    },
+  };
+
+  const mapped = messages[code] || {
+    status: 401,
+    error: 'Firebase recusou o login.',
+    detail: code,
+  };
+
+  return {
+    status: mapped.status,
+    body: {
+      error: mapped.error,
+      ...(mapped.detail ? { detail: mapped.detail } : {}),
+    },
   };
 }
 
@@ -123,8 +174,9 @@ authRouter.post('/login', async (req, res) => {
         name: login.displayName,
       },
     });
-  } catch {
-    return res.status(401).json({ error: 'Email ou senha invalidos.' });
+  } catch (error) {
+    const mapped = firebaseLoginError(error);
+    return res.status(mapped.status).json(mapped.body);
   }
 });
 

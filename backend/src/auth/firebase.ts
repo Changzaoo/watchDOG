@@ -11,6 +11,13 @@ interface FirebaseLoginResponse {
   displayName?: string;
 }
 
+export class FirebasePasswordSignInError extends Error {
+  constructor(public readonly code: string) {
+    super(code);
+    this.name = 'FirebasePasswordSignInError';
+  }
+}
+
 interface FirebaseAdminConfig {
   projectId: string;
   clientEmail: string;
@@ -146,7 +153,7 @@ export async function signInWithPassword(email: string, password: string): Promi
     error?: { message?: string };
   };
   if (!response.ok || !data.idToken) {
-    throw new Error(data?.error?.message || 'INVALID_LOGIN');
+    throw new FirebasePasswordSignInError(data?.error?.message || 'INVALID_LOGIN');
   }
 
   return data as FirebaseLoginResponse;
