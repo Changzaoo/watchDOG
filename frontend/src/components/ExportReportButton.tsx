@@ -9,15 +9,8 @@ interface Props {
 export function ExportReportButton({ scanId }: Props) {
   const [open, setOpen] = useState(false);
 
-  const exportAs = (format: 'json' | 'markdown' | 'pdf' | 'checklist') => {
-    const url = format === 'json'
-      ? api.exportJson(scanId)
-      : format === 'markdown'
-      ? api.exportMarkdown(scanId)
-      : format === 'checklist'
-      ? api.exportChecklist(scanId)
-      : api.exportPdf(scanId);
-    window.open(url, '_blank');
+  const exportAs = async (format: 'json' | 'markdown' | 'pdf' | 'checklist') => {
+    await api.downloadExport(scanId, format);
     setOpen(false);
   };
 

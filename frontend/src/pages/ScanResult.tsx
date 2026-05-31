@@ -38,7 +38,7 @@ export function ScanResult() {
 
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ severity: '', category: '', status: '', search: '' });
-  const [eventSource, setEventSource] = useState<EventSource | null>(null);
+  const [eventSource, setEventSource] = useState<ReturnType<typeof api.listenScanEvents> | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {

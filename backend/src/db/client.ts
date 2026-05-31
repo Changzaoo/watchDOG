@@ -1,5 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 
+const { configureDatabaseUrl } = require('../../scripts/database-url.cjs') as {
+  configureDatabaseUrl: () => string;
+};
+
+configureDatabaseUrl();
+
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 export const prisma =

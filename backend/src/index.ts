@@ -124,6 +124,7 @@ async function main() {
     console.log('Database connected');
   } catch (e) {
     console.error('Database connection failed:', e);
+    process.exit(1);
   }
 
   app.listen(PORT, () => {
