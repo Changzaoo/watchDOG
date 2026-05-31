@@ -4,11 +4,15 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
+import { authRouter } from './routes/auth';
 import { scansRouter } from './routes/scans';
 import { findingsRouter } from './routes/findings';
 import { eventsRouter } from './routes/events';
 import { rulesRouter } from './routes/rules';
 import { prisma } from './db/client';
+import { isAuthConfigured, isAuthRequired } from './auth/firebase';
+import { requireAuth } from './middleware/auth';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -63,6 +67,7 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
 // Rate limiting
 const apiLimiter = rateLimit({
@@ -72,6 +77,8 @@ const apiLimiter = rateLimit({
 });
 
 app.use('/api', apiLimiter);
+app.use('/api/auth', authRouter);
+app.use('/api', requireAuth);
 
 app.use('/api/scans/local', (_req, res, next) => {
   if (localScansEnabled) return next();
@@ -92,6 +99,8 @@ app.get('/health', (_req, res) => {
     status: 'ok',
     version: '1.0.0',
     localScansEnabled,
+    authRequired: isAuthRequired(),
+    authConfigured: isAuthConfigured(),
     timestamp: new Date().toISOString(),
   });
 });

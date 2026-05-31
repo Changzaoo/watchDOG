@@ -7,7 +7,22 @@ export interface BackendHealth {
   status: string;
   version: string;
   localScansEnabled: boolean;
+  authRequired: boolean;
+  authConfigured: boolean;
   timestamp: string;
+}
+
+export interface AuthUser {
+  uid: string;
+  email?: string;
+  name?: string;
+}
+
+export interface AuthSession {
+  authenticated: boolean;
+  authConfigured: boolean;
+  authRequired: boolean;
+  user?: AuthUser;
 }
 
 function formatApiError(err: any, fallback: string): string {
@@ -27,6 +42,7 @@ function formatApiError(err: any, fallback: string): string {
 async function fetchJson<T>(url: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(BASE + url, {
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
     ...opts,
   });
   if (!res.ok) {
@@ -43,6 +59,20 @@ export interface ScanWithDetails {
 }
 
 export const api = {
+  getAuthSession: () => fetchJson<AuthSession>('/auth/me'),
+
+  login: (email: string, password: string) =>
+    fetchJson<AuthSession>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+
+  logout: () =>
+    fetchJson<{ ok: boolean }>('/auth/logout', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    }),
+
   getScans: () => fetchJson<Scan[]>('/scans'),
 
   getScan: (id: string) => fetchJson<ScanWithDetails>(`/scans/${id}`),

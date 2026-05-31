@@ -4,6 +4,7 @@ import { Globe, Play, AlertCircle, ArrowLeft } from 'lucide-react';
 import { api } from '../lib/api';
 import { AuthWarningBanner } from '../components/AuthWarningBanner';
 import { LocalInstallPanel } from '../components/LocalInstallPanel';
+import { QrCodeReaderButton } from '../components/QrCodeReaderButton';
 import { useAppStore } from '../store/useAppStore';
 
 export function ScanUrl() {
@@ -96,13 +97,16 @@ export function ScanUrl() {
           <label className="block text-sm font-medium text-gray-300 mb-1.5">
             URL da Aplicação *
           </label>
-          <input
-            className="input"
-            value={url}
-            onChange={e => setUrl(e.target.value)}
-            placeholder="https://minhaaplicacao.com"
-            disabled={loading}
-          />
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              className="input"
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              placeholder="https://minhaaplicacao.com"
+              disabled={loading}
+            />
+            <QrCodeReaderButton disabled={loading} onRead={setUrl} />
+          </div>
         </div>
 
         <div>

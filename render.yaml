@@ -16,6 +16,18 @@ services:
         value: "false"
       - key: CORS_ORIGINS
         value: https://watchdog-chi.vercel.app
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_WEB_API_KEY
+        sync: false
+      - key: AUTH_REQUIRED
+        value: "true"
+      - key: AUTH_ALLOWED_EMAILS
+        sync: false
     disk:
       name: watchdog-data
       mountPath: /var/data

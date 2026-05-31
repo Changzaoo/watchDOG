@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { Scan, Finding, ScanLog } from '@sentinelscope/shared';
 
+export interface AuthUser {
+  uid: string;
+  email?: string;
+  name?: string;
+}
+
 interface AppState {
   scans: Scan[];
   currentScan: Scan | null;
@@ -10,6 +16,8 @@ interface AppState {
   backendOnline: boolean;
   backendHealthChecked: boolean;
   localScansEnabled: boolean;
+  authChecked: boolean;
+  authUser: AuthUser | null;
 
   setScans: (scans: Scan[]) => void;
   setCurrentScan: (scan: Scan | null) => void;
@@ -20,6 +28,8 @@ interface AppState {
   setBackendOnline: (online: boolean) => void;
   setBackendHealthChecked: (checked: boolean) => void;
   setLocalScansEnabled: (enabled: boolean) => void;
+  setAuthChecked: (checked: boolean) => void;
+  setAuthUser: (user: AuthUser | null) => void;
   updateFindingStatus: (findingId: string, status: string) => void;
   updateFindingNote: (findingId: string, note: string) => void;
 }
@@ -33,6 +43,8 @@ export const useAppStore = create<AppState>((set) => ({
   backendOnline: false,
   backendHealthChecked: false,
   localScansEnabled: false,
+  authChecked: false,
+  authUser: null,
 
   setScans: (scans) => set({ scans }),
   setCurrentScan: (scan) => set({ currentScan: scan }),
@@ -45,6 +57,8 @@ export const useAppStore = create<AppState>((set) => ({
   setBackendOnline: (backendOnline) => set({ backendOnline }),
   setBackendHealthChecked: (backendHealthChecked) => set({ backendHealthChecked }),
   setLocalScansEnabled: (localScansEnabled) => set({ localScansEnabled }),
+  setAuthChecked: (authChecked) => set({ authChecked }),
+  setAuthUser: (authUser) => set({ authUser }),
   updateFindingStatus: (findingId, status) =>
     set((state) => ({
       currentFindings: state.currentFindings.map(f =>
