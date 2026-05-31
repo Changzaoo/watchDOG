@@ -3,7 +3,110 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build --workspace=shared && npm run build --workspace=frontend",
   "outputDirectory": "frontend/dist",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), fullscreen=(self)"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://watchdog-chi.vercel.app"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, HEAD, OPTIONS, POST, PATCH"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/.env",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/.env/:path*",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/.git/:path*",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/graphql",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/graphql/:path*",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/debug",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/debug/:path*",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/server-status",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/server-status/:path*",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/admin",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/swagger",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/swagger/:path*",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/api-docs",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/api-docs/:path*",
+      "destination": "/api/not-found"
+    },
     {
       "source": "/api/:path*",
       "destination": "https://watchdog-to6v.onrender.com/api/:path*"
