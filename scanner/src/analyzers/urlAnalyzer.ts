@@ -111,7 +111,9 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
   if (url.startsWith('https://')) {
     const httpUrl = url.replace('https://', 'http://');
     const httpResp = await safeGet(httpUrl);
-    if (httpResp.statusCode === 200 && !httpResp.redirectChain.some(r => r.startsWith('https://'))) {
+    const redirectedToHttps = httpResp.finalUrl?.startsWith('https://') ||
+      httpResp.redirectChain.some(r => r.startsWith('https://'));
+    if (httpResp.statusCode > 0 && !redirectedToHttps) {
       addFinding(
         'URL_002', 'HTTP não redireciona para HTTPS', 'Headers HTTP', 'medium',
         'Acessar via HTTP não redireciona para HTTPS.',

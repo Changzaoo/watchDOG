@@ -8,6 +8,7 @@ export interface SafeHttpResponse {
   headers: Record<string, string>;
   body: string;
   redirectChain: string[];
+  finalUrl?: string;
   tlsValid?: boolean;
   tlsExpiry?: Date;
   error?: string;
@@ -96,7 +97,7 @@ export async function safeGet(
         }
       });
       res.on('end', () => {
-        resolve({ statusCode, headers, body, redirectChain, tlsValid, tlsExpiry });
+        resolve({ statusCode, headers, body, redirectChain, finalUrl: parsed.toString(), tlsValid, tlsExpiry });
       });
     });
 
