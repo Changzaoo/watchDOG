@@ -6,6 +6,13 @@ const API_ORIGIN = USE_DIRECT_API ? DIRECT_API_ORIGIN : '';
 const BASE = API_ORIGIN ? `${API_ORIGIN}/api` : '/api';
 const HEALTH_URL = API_ORIGIN ? `${API_ORIGIN}/health` : '/health';
 
+export interface BackendHealth {
+  status: string;
+  version: string;
+  localScansEnabled: boolean;
+  timestamp: string;
+}
+
 async function fetchJson<T>(url: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(BASE + url, {
     headers: { 'Content-Type': 'application/json' },
@@ -75,10 +82,16 @@ export const api = {
 };
 
 export async function checkBackendHealth(): Promise<boolean> {
+  const health = await getBackendHealth();
+  return Boolean(health);
+}
+
+export async function getBackendHealth(): Promise<BackendHealth | null> {
   try {
     const res = await fetch(HEALTH_URL, { signal: AbortSignal.timeout(3000) });
-    return res.ok;
+    if (!res.ok) return null;
+    return res.json();
   } catch {
-    return false;
+    return null;
   }
 }

@@ -1,8 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { FolderOpen, Globe, ArrowRight } from 'lucide-react';
+import { FolderOpen, Globe, ArrowRight, Lock } from 'lucide-react';
+import { useAppStore } from '../store/useAppStore';
 
 export function NewScan() {
   const navigate = useNavigate();
+  const { backendOnline, localScansEnabled } = useAppStore();
+  const localScanDisabled = backendOnline && !localScansEnabled;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
@@ -15,8 +18,15 @@ export function NewScan() {
 
       <div className="space-y-4">
         <button
-          onClick={() => navigate('/scan/local')}
-          className="w-full card hover:border-violet-700/70 cursor-pointer transition-all group text-left"
+          onClick={() => {
+            if (!localScanDisabled) navigate('/scan/local');
+          }}
+          disabled={localScanDisabled}
+          className={`w-full card transition-all group text-left ${
+            localScanDisabled
+              ? 'opacity-70 cursor-not-allowed'
+              : 'hover:border-violet-700/70 cursor-pointer'
+          }`}
         >
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-violet-900/40 border border-violet-800/50 flex items-center justify-center flex-shrink-0">
@@ -27,10 +37,16 @@ export function NewScan() {
                 <div className="font-semibold text-gray-200 group-hover:text-white transition-colors">
                   Analisar Projeto Local
                 </div>
-                <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-violet-400 transition-colors" />
+                {localScanDisabled ? (
+                  <Lock className="w-4 h-4 text-gray-600" />
+                ) : (
+                  <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-violet-400 transition-colors" />
+                )}
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Análise estática completa de código-fonte, configurações, dependências, secrets, Docker, CI/CD e muito mais.
+                {localScanDisabled
+                  ? 'Disponível apenas ao rodar o backend localmente na sua máquina.'
+                  : 'Análise estática completa de código-fonte, configurações, dependências, secrets, Docker, CI/CD e muito mais.'}
               </p>
               <div className="flex flex-wrap gap-2 mt-3">
                 {['Código', 'Dependências', 'Secrets', 'Docker', 'CI/CD', 'Web3'].map(t => (

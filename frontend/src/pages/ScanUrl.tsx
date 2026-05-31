@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Globe, Play, AlertCircle, ArrowLeft } from 'lucide-react';
 import { api } from '../lib/api';
 import { AuthWarningBanner } from '../components/AuthWarningBanner';
+import { useAppStore } from '../store/useAppStore';
 
 export function ScanUrl() {
   const [url, setUrl] = useState('');
@@ -11,9 +12,11 @@ export function ScanUrl() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { backendOnline } = useAppStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!backendOnline) { setError('Backend offline. Tente novamente em alguns segundos.'); return; }
     if (!authorized) { setError('Você deve confirmar a autorização antes de continuar'); return; }
     if (!url.trim()) { setError('Informe a URL'); return; }
 
@@ -131,7 +134,7 @@ export function ScanUrl() {
 
         <button
           type="submit"
-          disabled={loading || !url || !authorized}
+          disabled={loading || !url || !authorized || !backendOnline}
           className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (

@@ -2,16 +2,18 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAppStore } from '../store/useAppStore';
-import { checkBackendHealth, api } from '../lib/api';
+import { getBackendHealth, api } from '../lib/api';
 
 export function Layout() {
-  const { setBackendOnline, setScans } = useAppStore();
+  const { setBackendOnline, setLocalScansEnabled, setScans } = useAppStore();
 
   useEffect(() => {
     // Check backend health
     const check = async () => {
-      const online = await checkBackendHealth();
+      const health = await getBackendHealth();
+      const online = Boolean(health);
       setBackendOnline(online);
+      setLocalScansEnabled(Boolean(health?.localScansEnabled));
       if (online) {
         try {
           const scans = await api.getScans();
