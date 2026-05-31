@@ -52,7 +52,7 @@ function ScanCard({ scan }: { scan: Scan }) {
 }
 
 export function Dashboard() {
-  const { scans, backendOnline, setScans } = useAppStore();
+  const { scans, backendOnline, localScansEnabled, setScans } = useAppStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,12 +61,12 @@ export function Dashboard() {
     }
   }, [backendOnline]);
 
-  const lastScan = scans[0];
-  const avgScore = scans.length > 0
-    ? Math.round(scans.reduce((a, s) => a + s.score, 0) / scans.length)
+  const visibleScans = localScansEnabled ? scans : scans.filter(scan => scan.type === 'url');
+  const avgScore = visibleScans.length > 0
+    ? Math.round(visibleScans.reduce((a, s) => a + s.score, 0) / visibleScans.length)
     : 0;
 
-  const totalSummary = scans.reduce((acc, s) => {
+  const totalSummary = visibleScans.reduce((acc, s) => {
     const sum = typeof s.summary === 'string' ? JSON.parse(s.summary) : s.summary;
     return {
       total: acc.total + sum.total,
@@ -78,8 +78,8 @@ export function Dashboard() {
     };
   }, { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 });
 
-  const displaySummary = scans.length === 0 ? DEMO_SUMMARY : totalSummary;
-  const displayScore = scans.length === 0 ? 62 : avgScore;
+  const displaySummary = visibleScans.length === 0 ? DEMO_SUMMARY : totalSummary;
+  const displayScore = visibleScans.length === 0 ? 62 : avgScore;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -95,7 +95,7 @@ export function Dashboard() {
           </p>
         </div>
         <button
-          onClick={() => navigate('/scan/new')}
+          onClick={() => navigate('/scan/url')}
           className="btn-primary flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
@@ -103,7 +103,7 @@ export function Dashboard() {
         </button>
       </div>
 
-      {scans.length === 0 && (
+      {visibleScans.length === 0 && (
         <div className="card border-dashed border-violet-800/50 bg-violet-900/5 text-center py-4">
           <AppLogo className="w-12 h-12 mx-auto mb-2 opacity-80" />
           <p className="text-gray-500 text-sm">Modo demo — dados simulados. Inicie seu primeiro scan!</p>
@@ -145,7 +145,7 @@ export function Dashboard() {
           </div>
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: 'Total de Scans', value: scans.length || '(demo)' },
+              { label: 'Total de Scans', value: visibleScans.length || '(demo)' },
               { label: 'Total de Achados', value: displaySummary.total },
               { label: 'Score Médio', value: displayScore + '/100' },
             ].map(({ label, value }) => (
@@ -182,6 +182,7 @@ export function Dashboard() {
       <div>
         <h2 className="text-sm font-semibold text-gray-400 mb-3">Ações Rápidas</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {localScansEnabled && (
           <button
             onClick={() => navigate('/scan/local')}
             className="card hover:border-violet-800/50 cursor-pointer transition-all group text-left"
@@ -190,6 +191,7 @@ export function Dashboard() {
             <div className="font-semibold text-gray-200">Analisar Projeto Local</div>
             <div className="text-xs text-gray-500 mt-1">Análise estática de código, configs, dependências</div>
           </button>
+          )}
           <button
             onClick={() => navigate('/scan/url')}
             className="card hover:border-cyan-800/50 cursor-pointer transition-all group text-left"
@@ -204,17 +206,17 @@ export function Dashboard() {
           >
             <Clock className="w-6 h-6 text-emerald-400 mb-2" />
             <div className="font-semibold text-gray-200">Ver Histórico</div>
-            <div className="text-xs text-gray-500 mt-1">{scans.length} scans realizados</div>
+            <div className="text-xs text-gray-500 mt-1">{visibleScans.length} scans realizados</div>
           </button>
         </div>
       </div>
 
       {/* Recent Scans */}
-      {scans.length > 0 && (
+      {visibleScans.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold text-gray-400 mb-3">Scans Recentes</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {scans.slice(0, 6).map(scan => (
+            {visibleScans.slice(0, 6).map(scan => (
               <ScanCard key={scan.id} scan={scan} />
             ))}
           </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Globe, Play, AlertCircle, ArrowLeft } from 'lucide-react';
 import { api } from '../lib/api';
 import { AuthWarningBanner } from '../components/AuthWarningBanner';
+import { LocalInstallPanel } from '../components/LocalInstallPanel';
 import { useAppStore } from '../store/useAppStore';
 
 export function ScanUrl() {
@@ -12,7 +13,7 @@ export function ScanUrl() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { backendOnline } = useAppStore();
+  const { backendOnline, backendHealthChecked, localScansEnabled } = useAppStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +63,8 @@ export function ScanUrl() {
           <p className="text-gray-500 text-sm">Análise passiva e defensiva de aplicação online</p>
         </div>
       </div>
+
+      {backendHealthChecked && !localScansEnabled && <LocalInstallPanel />}
 
       <AuthWarningBanner checked={authorized} onChange={setAuthorized} />
 

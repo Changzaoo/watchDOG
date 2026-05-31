@@ -19,6 +19,18 @@ import { scanEventEmitters } from './events';
 
 export const scansRouter = Router();
 
+function areLocalScansEnabled(): boolean {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return process.env.ENABLE_LOCAL_SCANS === 'true' || !isProduction;
+}
+
+function visibleScanWhere(id?: string) {
+  const where: { id?: string; type?: string } = {};
+  if (id) where.id = id;
+  if (!areLocalScansEnabled()) where.type = 'url';
+  return where;
+}
+
 const localScanSchema = z.object({
   path: z.string().min(1),
   projectName: z.string().optional(),
@@ -48,6 +60,12 @@ async function applyRuleConfigs<T extends { ruleId: string; severity: string }>(
 
 // POST /api/scans/local
 scansRouter.post('/local', async (req: Request, res: Response) => {
+  if (!areLocalScansEnabled()) {
+    return res.status(403).json({
+      error: 'Scan local esta desabilitado neste backend hospedado. Use a versao local para analisar pastas do seu computador.',
+    });
+  }
+
   const parsed = localScanSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -138,6 +156,7 @@ scansRouter.post('/url', async (req: Request, res: Response) => {
 // GET /api/scans
 scansRouter.get('/', async (_req: Request, res: Response) => {
   const scans = await prisma.scan.findMany({
+    where: visibleScanWhere(),
     orderBy: { createdAt: 'desc' },
     take: 50,
   });
@@ -153,8 +172,8 @@ scansRouter.get('/', async (_req: Request, res: Response) => {
 
 // GET /api/scans/:id
 scansRouter.get('/:id', async (req: Request, res: Response) => {
-  const scan = await prisma.scan.findUnique({
-    where: { id: req.params.id },
+  const scan = await prisma.scan.findFirst({
+    where: visibleScanWhere(req.params.id),
     include: { findings: true, logs: { orderBy: { createdAt: 'asc' }, take: 500 } },
   });
 
@@ -169,6 +188,12 @@ scansRouter.get('/:id', async (req: Request, res: Response) => {
 
 // GET /api/scans/:id/findings
 scansRouter.get('/:id/findings', async (req: Request, res: Response) => {
+  const scan = await prisma.scan.findFirst({
+    where: visibleScanWhere(req.params.id),
+    select: { id: true },
+  });
+  if (!scan) return res.status(404).json({ error: 'Scan nÃ£o encontrado' });
+
   const findings = await prisma.finding.findMany({
     where: { scanId: req.params.id },
     orderBy: [{ severity: 'asc' }, { createdAt: 'asc' }],
@@ -178,6 +203,12 @@ scansRouter.get('/:id/findings', async (req: Request, res: Response) => {
 
 // GET /api/scans/:id/threat-model
 scansRouter.get('/:id/threat-model', async (req: Request, res: Response) => {
+  const scan = await prisma.scan.findFirst({
+    where: visibleScanWhere(req.params.id),
+    select: { id: true },
+  });
+  if (!scan) return res.status(404).json({ error: 'Scan nÃ£o encontrado' });
+
   const tm = await prisma.threatModel.findUnique({ where: { scanId: req.params.id } });
   if (!tm) return res.status(404).json({ error: 'Threat model não encontrado — execute o scan primeiro' });
   res.json({
@@ -192,6 +223,12 @@ scansRouter.get('/:id/threat-model', async (req: Request, res: Response) => {
 
 // GET /api/scans/:id/defense-depth
 scansRouter.get('/:id/defense-depth', async (req: Request, res: Response) => {
+  const scan = await prisma.scan.findFirst({
+    where: visibleScanWhere(req.params.id),
+    select: { id: true },
+  });
+  if (!scan) return res.status(404).json({ error: 'Scan nÃ£o encontrado' });
+
   const layers = await prisma.defenseLayer.findMany({
     where: { scanId: req.params.id },
     orderBy: { name: 'asc' },
@@ -201,8 +238,8 @@ scansRouter.get('/:id/defense-depth', async (req: Request, res: Response) => {
 
 // GET /api/scans/:id/export/checklist
 scansRouter.get('/:id/export/checklist', async (req: Request, res: Response) => {
-  const scan = await prisma.scan.findUnique({
-    where: { id: req.params.id },
+  const scan = await prisma.scan.findFirst({
+    where: visibleScanWhere(req.params.id),
     include: { findings: { orderBy: [{ severity: 'asc' }] } },
   });
   if (!scan) return res.status(404).json({ error: 'Scan não encontrado' });
@@ -237,8 +274,8 @@ scansRouter.get('/:id/export/checklist', async (req: Request, res: Response) => 
 
 // GET /api/scans/:id/export/json
 scansRouter.get('/:id/export/json', async (req: Request, res: Response) => {
-  const scan = await prisma.scan.findUnique({
-    where: { id: req.params.id },
+  const scan = await prisma.scan.findFirst({
+    where: visibleScanWhere(req.params.id),
     include: { findings: true },
   });
   if (!scan) return res.status(404).json({ error: 'Scan não encontrado' });
@@ -263,8 +300,8 @@ scansRouter.get('/:id/export/json', async (req: Request, res: Response) => {
 
 // GET /api/scans/:id/export/markdown
 scansRouter.get('/:id/export/markdown', async (req: Request, res: Response) => {
-  const scan = await prisma.scan.findUnique({
-    where: { id: req.params.id },
+  const scan = await prisma.scan.findFirst({
+    where: visibleScanWhere(req.params.id),
     include: { findings: true },
   });
   if (!scan) return res.status(404).json({ error: 'Scan não encontrado' });
@@ -289,8 +326,8 @@ scansRouter.get('/:id/export/markdown', async (req: Request, res: Response) => {
 
 // GET /api/scans/:id/export/pdf
 scansRouter.get('/:id/export/pdf', async (req: Request, res: Response) => {
-  const scan = await prisma.scan.findUnique({
-    where: { id: req.params.id },
+  const scan = await prisma.scan.findFirst({
+    where: visibleScanWhere(req.params.id),
     include: { findings: true },
   });
   if (!scan) return res.status(404).json({ error: 'Scan não encontrado' });

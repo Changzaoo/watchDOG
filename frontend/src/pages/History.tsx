@@ -8,7 +8,7 @@ import { SecurityScoreCard } from '../components/SecurityScoreCard';
 import { formatDate, formatDuration } from '../lib/utils';
 
 export function History() {
-  const { scans, setScans, backendOnline } = useAppStore();
+  const { scans, setScans, backendOnline, localScansEnabled } = useAppStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,6 +16,8 @@ export function History() {
       api.getScans().then(setScans).catch(() => {});
     }
   }, [backendOnline]);
+
+  const visibleScans = localScansEnabled ? scans : scans.filter(scan => scan.type === 'url');
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -25,14 +27,14 @@ export function History() {
             <HistoryIcon className="w-7 h-7 text-violet-400" />
             Histórico de Scans
           </h1>
-          <p className="text-gray-500 text-sm mt-1">{scans.length} scans realizados</p>
+          <p className="text-gray-500 text-sm mt-1">{visibleScans.length} scans realizados</p>
         </div>
-        <button onClick={() => navigate('/scan/new')} className="btn-primary">
+        <button onClick={() => navigate('/scan/url')} className="btn-primary">
           + Novo Scan
         </button>
       </div>
 
-      {scans.length === 0 ? (
+      {visibleScans.length === 0 ? (
         <div className="card text-center py-16">
           <HistoryIcon className="w-12 h-12 mx-auto mb-4 text-gray-600" />
           <p className="text-gray-400 font-medium">Nenhum scan realizado ainda</p>
@@ -40,7 +42,7 @@ export function History() {
         </div>
       ) : (
         <div className="space-y-2">
-          {scans.map(scan => {
+          {visibleScans.map(scan => {
             const summary: ScanSummary = typeof scan.summary === 'string' ? JSON.parse(scan.summary) : scan.summary;
             return (
               <div

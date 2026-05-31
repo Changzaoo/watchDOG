@@ -5,7 +5,7 @@ import { useAppStore } from '../store/useAppStore';
 import { getBackendHealth, api } from '../lib/api';
 
 export function Layout() {
-  const { setBackendOnline, setLocalScansEnabled, setScans } = useAppStore();
+  const { setBackendOnline, setBackendHealthChecked, setLocalScansEnabled, setScans } = useAppStore();
 
   useEffect(() => {
     // Check backend health
@@ -14,6 +14,7 @@ export function Layout() {
       const online = Boolean(health);
       setBackendOnline(online);
       setLocalScansEnabled(Boolean(health?.localScansEnabled));
+      setBackendHealthChecked(true);
       if (online) {
         try {
           const scans = await api.getScans();

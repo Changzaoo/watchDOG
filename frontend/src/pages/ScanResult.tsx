@@ -22,7 +22,19 @@ import { formatDate, formatDuration, severityLabel } from '../lib/utils';
 export function ScanResult() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentScan, currentFindings, currentLogs, scanProgress, setCurrentScan, setCurrentFindings, setCurrentLogs, addLog, setScanProgress } = useAppStore();
+  const {
+    currentScan,
+    currentFindings,
+    currentLogs,
+    scanProgress,
+    backendHealthChecked,
+    localScansEnabled,
+    setCurrentScan,
+    setCurrentFindings,
+    setCurrentLogs,
+    addLog,
+    setScanProgress,
+  } = useAppStore();
 
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ severity: '', category: '', status: '', search: '' });
@@ -35,6 +47,12 @@ export function ScanResult() {
 
     return () => { eventSource?.close(); };
   }, [id]);
+
+  useEffect(() => {
+    if (backendHealthChecked && currentScan?.type !== 'url' && !localScansEnabled) {
+      navigate('/scan/url', { replace: true });
+    }
+  }, [backendHealthChecked, currentScan, localScansEnabled, navigate]);
 
   async function loadScan() {
     if (!id) return;
@@ -104,6 +122,18 @@ export function ScanResult() {
         </div>
       </div>
     );
+  }
+
+  if (currentScan.type !== 'url' && !backendHealthChecked) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-gray-500 text-sm">Verificando disponibilidade...</div>
+      </div>
+    );
+  }
+
+  if (currentScan.type !== 'url' && !localScansEnabled) {
+    return null;
   }
 
   const isRunning = currentScan.status === 'running' || currentScan.status === 'pending';

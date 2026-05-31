@@ -8,7 +8,7 @@ import { AppLogo } from './AppLogo';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { to: '/scan/new', label: 'Novo Scan', icon: PlusCircle },
+  { to: '/scan/url', label: 'Novo Scan', icon: PlusCircle },
   { to: '/history', label: 'Histórico', icon: History },
 ];
 
