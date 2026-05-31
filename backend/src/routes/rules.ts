@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import type { RuleConfig as RuleConfigModel } from '@prisma/client';
 import { allFileRules } from '@sentinelscope/scanner';
 import { prisma } from '../db/client';
 
@@ -7,8 +8,10 @@ export const rulesRouter = Router();
 
 // GET /api/rules - list scanner rule catalog with local config overrides
 rulesRouter.get('/', async (_req: Request, res: Response) => {
-  const configs = await prisma.ruleConfig.findMany();
-  const configByRuleId = new Map(configs.map(c => [c.ruleId, c]));
+  const configs = await prisma.ruleConfig.findMany() as RuleConfigModel[];
+  const configByRuleId = new Map<string, RuleConfigModel>(
+    configs.map((c: RuleConfigModel) => [c.ruleId, c])
+  );
 
   const rules = allFileRules.map(rule => {
     const config = configByRuleId.get(rule.id);

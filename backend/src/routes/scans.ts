@@ -1,5 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import type {
+  Finding as DbFinding,
+  RuleConfig as RuleConfigModel,
+  Scan as DbScan,
+} from '@prisma/client';
 import path from 'path';
 import fs from 'fs';
 import { prisma } from '../db/client';
@@ -27,10 +32,12 @@ const urlScanSchema = z.object({
 });
 
 async function applyRuleConfigs<T extends { ruleId: string; severity: string }>(findings: T[]): Promise<T[]> {
-  const configs = await prisma.ruleConfig.findMany();
+  const configs = await prisma.ruleConfig.findMany() as RuleConfigModel[];
   if (configs.length === 0) return findings;
 
-  const byRuleId = new Map(configs.map(c => [c.ruleId, c]));
+  const byRuleId = new Map<string, RuleConfigModel>(
+    configs.map((c: RuleConfigModel) => [c.ruleId, c])
+  );
   return findings
     .filter(f => byRuleId.get(f.ruleId)?.enabled !== false)
     .map(f => {
@@ -121,7 +128,7 @@ scansRouter.get('/', async (_req: Request, res: Response) => {
     take: 50,
   });
 
-  const result = scans.map(s => ({
+  const result = (scans as DbScan[]).map((s: DbScan) => ({
     ...s,
     techStack: JSON.parse(s.techStack),
     summary: JSON.parse(s.summary),
@@ -186,22 +193,24 @@ scansRouter.get('/:id/export/checklist', async (req: Request, res: Response) => 
   });
   if (!scan) return res.status(404).json({ error: 'Scan não encontrado' });
 
+  const checklistFindings = scan.findings as DbFinding[];
+
   const lines = [
     `# Checklist de Correção — ${scan.projectName}`,
     `Data: ${new Date(scan.startedAt).toLocaleDateString('pt-BR')}`,
     `Score: ${scan.score}/100`,
     '',
     '## Críticos (corrigir imediatamente)',
-    ...scan.findings.filter(f => f.severity === 'critical').map(f => `- [ ] [${f.ruleId}] ${f.title}`),
+    ...checklistFindings.filter((f: DbFinding) => f.severity === 'critical').map((f: DbFinding) => `- [ ] [${f.ruleId}] ${f.title}`),
     '',
     '## Altos',
-    ...scan.findings.filter(f => f.severity === 'high').map(f => `- [ ] [${f.ruleId}] ${f.title}`),
+    ...checklistFindings.filter((f: DbFinding) => f.severity === 'high').map((f: DbFinding) => `- [ ] [${f.ruleId}] ${f.title}`),
     '',
     '## Médios',
-    ...scan.findings.filter(f => f.severity === 'medium').map(f => `- [ ] [${f.ruleId}] ${f.title}`),
+    ...checklistFindings.filter((f: DbFinding) => f.severity === 'medium').map((f: DbFinding) => `- [ ] [${f.ruleId}] ${f.title}`),
     '',
     '## Baixos',
-    ...scan.findings.filter(f => f.severity === 'low').map(f => `- [ ] [${f.ruleId}] ${f.title}`),
+    ...checklistFindings.filter((f: DbFinding) => f.severity === 'low').map((f: DbFinding) => `- [ ] [${f.ruleId}] ${f.title}`),
     '',
     '---',
     '*Gerado por watchDOG — use apenas em aplicações de sua propriedade ou com autorização explícita.*',
@@ -281,7 +290,7 @@ scansRouter.get('/:id/export/pdf', async (req: Request, res: Response) => {
   doc.pipe(res);
 
   const summary: ScanSummary = JSON.parse(scan.summary);
-  const findings = scan.findings;
+  const findings = scan.findings as DbFinding[];
 
   doc.fontSize(24).fillColor('#1a1a2e').text('watchDOG', { align: 'center' });
   doc.fontSize(14).fillColor('#444').text('Relatório de Segurança Defensiva', { align: 'center' });
@@ -309,7 +318,7 @@ scansRouter.get('/:id/export/pdf', async (req: Request, res: Response) => {
 
   const severityOrder = ['critical', 'high', 'medium', 'low', 'info'];
   for (const sev of severityOrder) {
-    const sevFindings = findings.filter(f => f.severity === sev);
+    const sevFindings = findings.filter((f: DbFinding) => f.severity === sev);
     if (sevFindings.length === 0) continue;
 
     const colors: Record<string, string> = {
@@ -330,7 +339,7 @@ scansRouter.get('/:id/export/pdf', async (req: Request, res: Response) => {
 
   doc.addPage();
   doc.fontSize(14).fillColor('#000').text('Checklist de Correção');
-  const actionable = findings.filter(f => ['critical', 'high', 'medium'].includes(f.severity));
+  const actionable = findings.filter((f: DbFinding) => ['critical', 'high', 'medium'].includes(f.severity));
   for (const f of actionable) {
     doc.fontSize(10).fillColor('#333').text(`☐ [${f.ruleId}] ${f.title}`);
   }
