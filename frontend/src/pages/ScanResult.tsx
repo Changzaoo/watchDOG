@@ -15,6 +15,7 @@ import { FindingCard } from '../components/FindingCard';
 import { TechStackDetected } from '../components/TechStackDetected';
 import { CategoryChart } from '../components/CategoryChart';
 import { ExportReportButton } from '../components/ExportReportButton';
+import { FixPromptPanel } from '../components/FixPromptPanel';
 import { AppLogo } from '../components/AppLogo';
 import { formatDate, formatDuration, severityLabel } from '../lib/utils';
 
@@ -258,6 +259,12 @@ export function ScanResult() {
               filtered.map(f => <FindingCard key={f.id} finding={f} />)
             )}
           </div>
+
+          {currentFindings.length > 0 && currentScan.status === 'completed' && (
+            <div className="mt-6">
+              <FixPromptPanel scan={currentScan} findings={currentFindings} />
+            </div>
+          )}
         </div>
       )}
     </div>

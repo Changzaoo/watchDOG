@@ -1,4 +1,4 @@
-import { Scan, Finding } from '@sentinelscope/shared';
+import { Finding, generateAggregateFixPrompt, Scan } from '@sentinelscope/shared';
 import { scoreLabel } from '../utils/severity';
 
 export function generateMarkdownReport(scan: Scan, findings: Finding[]): string {
@@ -69,6 +69,11 @@ export function generateMarkdownReport(scan: Scan, findings: Finding[]): string 
     md += `- [ ] [${f.ruleId}] ${f.title}\n`;
   }
 
+  if (findings.length > 0) {
+    md += `\n## Prompt para Corrigir Vulnerabilidades\n\n`;
+    md += `\`\`\`\n${generateAggregateFixPrompt(scan, findings)}\n\`\`\`\n`;
+  }
+
   md += `\n---\n*Relatorio gerado por watchDOG - Ferramenta de Auditoria de Seguranca Defensiva*\n`;
   md += `*Analise apenas aplicacoes de sua propriedade ou com autorizacao explicita.*\n`;
 
@@ -95,6 +100,7 @@ export function generateJsonReport(scan: Scan, findings: Finding[]) {
       techStack: scan.techStack,
       summary: scan.summary,
     },
+    remediationPrompt: generateAggregateFixPrompt(scan, findings),
     findings: findings.map(f => ({
       id: f.ruleId,
       title: f.title,
