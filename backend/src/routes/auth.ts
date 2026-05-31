@@ -28,6 +28,13 @@ function firebaseConfigError() {
   };
 }
 
+function authAllowlistError() {
+  return {
+    error: 'Nenhum usuario autorizado configurado.',
+    detail: 'Defina AUTH_ALLOWED_EMAILS com seu email ou use AUTH_ALLOW_ALL_USERS=true conscientemente.',
+  };
+}
+
 function firebaseLoginError(error: unknown) {
   if (!(error instanceof FirebasePasswordSignInError)) {
     return { status: 401, body: { error: 'Email ou senha invalidos.' } };
@@ -79,9 +86,10 @@ function firebaseLoginError(error: unknown) {
 }
 
 function cookieOptions() {
+  const isPublicBackend = process.env.NODE_ENV === 'production' || process.env.PUBLIC_BACKEND === 'true';
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isPublicBackend,
     sameSite: 'lax' as const,
     path: '/',
     maxAge: SESSION_MAX_AGE_MS,
@@ -159,7 +167,7 @@ authRouter.post('/login', async (req, res) => {
   try {
     const login = await signInWithPassword(parsed.data.email, parsed.data.password);
     if (!isEmailAllowed(login.email)) {
-      return res.status(403).json({ error: 'Usuario nao autorizado.' });
+      return res.status(403).json(authAllowlistError());
     }
 
     const sessionCookie = await createSessionCookie(login.idToken);

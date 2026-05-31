@@ -1,7 +1,8 @@
 import https from 'https';
 import http from 'http';
 import { URL } from 'url';
-import { validateScanUrlWithDns } from './urlValidator';
+import type { LookupFunction } from 'net';
+import { resolvePublicScanAddress } from './urlValidator';
 
 export interface SafeHttpResponse {
   statusCode: number;
@@ -27,8 +28,8 @@ export async function safeGet(
     return { statusCode: 0, headers: {}, body: '', redirectChain, error: 'Too many redirects' };
   }
 
-  const validation = await validateScanUrlWithDns(urlStr);
-  if (!validation.valid || !validation.normalizedUrl) {
+  const validation = await resolvePublicScanAddress(urlStr);
+  if (!validation.valid || !validation.normalizedUrl || !validation.address || !validation.family) {
     return { statusCode: 0, headers: {}, body: '', redirectChain, error: validation.reason || 'Blocked URL' };
   }
 
@@ -43,8 +44,20 @@ export async function safeGet(
 
     const isHttps = parsed.protocol === 'https:';
     const lib = isHttps ? https : http;
+    const lookup = ((_hostname: string, options: unknown, callback?: unknown) => {
+      const done = typeof options === 'function' ? options : callback;
+      if (typeof done !== 'function') return;
+      if (typeof options === 'object' && options !== null && (options as { all?: boolean }).all) {
+        (done as (err: NodeJS.ErrnoException | null, addresses: Array<{ address: string; family: number }>) => void)(
+          null,
+          [{ address: validation.address!, family: validation.family! }]
+        );
+        return;
+      }
+      (done as (err: NodeJS.ErrnoException | null, address: string, family: number) => void)(null, validation.address!, validation.family!);
+    }) as LookupFunction;
 
-    const options = {
+    const baseOptions: http.RequestOptions = {
       hostname: parsed.hostname,
       port: parsed.port || (isHttps ? 443 : 80),
       path: parsed.pathname + parsed.search,
@@ -55,7 +68,15 @@ export async function safeGet(
         ...customHeaders,
       },
       timeout: SAFE_TIMEOUT_MS,
+      lookup,
+    };
+
+    const options: http.RequestOptions | https.RequestOptions = isHttps ? {
+      ...baseOptions,
+      servername: parsed.hostname,
       rejectUnauthorized: false,
+    } : {
+      ...baseOptions,
     };
 
     let tlsValid: boolean | undefined;

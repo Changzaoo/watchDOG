@@ -21,6 +21,10 @@ export const scansRouter = Router();
 
 function areLocalScansEnabled(): boolean {
   const isProduction = process.env.NODE_ENV === 'production';
+  const isPublicBackend = isProduction || process.env.PUBLIC_BACKEND === 'true';
+  if (isPublicBackend) {
+    return process.env.ENABLE_LOCAL_SCANS === 'true' && process.env.ALLOW_LOCAL_SCANS_ON_PUBLIC_BACKEND === 'true';
+  }
   return process.env.ENABLE_LOCAL_SCANS === 'true' || !isProduction;
 }
 
@@ -147,7 +151,9 @@ scansRouter.post('/url', async (req: Request, res: Response) => {
     console.error('Failed to start URL scan:', err);
     return res.status(500).json({
       error: 'Nao foi possivel iniciar o scan de URL',
-      detail: err?.message || String(err),
+      ...(process.env.NODE_ENV === 'production' || process.env.PUBLIC_BACKEND === 'true'
+        ? {}
+        : { detail: err?.message || String(err) }),
     });
   }
 });

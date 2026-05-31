@@ -118,7 +118,9 @@ export function getAllowedEmails(): Set<string> {
 
 export function isEmailAllowed(email?: string): boolean {
   const allowed = getAllowedEmails();
-  if (allowed.size === 0) return true;
+  if (allowed.size === 0) {
+    return process.env.AUTH_ALLOW_ALL_USERS === 'true';
+  }
   return Boolean(email && allowed.has(email.toLowerCase()));
 }
 

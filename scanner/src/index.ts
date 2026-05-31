@@ -9,6 +9,6 @@ export { generateDefenseDepth, getDefenseScore } from './analyzers/defenseDepthA
 export { allFileRules } from './rules';
 export { maskSecret, maskUrl, maskLine, extractAndMaskSecret } from './utils/maskSecret';
 export { calculateScore, scoreLabel, buildSummary } from './utils/severity';
-export { validateScanUrl, validateScanUrlWithDns, validateLocalPath } from './utils/urlValidator';
+export { validateScanUrl, validateScanUrlWithDns, resolvePublicScanAddress, validateLocalPath } from './utils/urlValidator';
 export { generateFixPrompt, generateSecretFixPrompt } from './utils/fixPromptGenerator';
 export type { LocalScanOptions, UrlScanOptions, ScanResultRaw } from './types';
