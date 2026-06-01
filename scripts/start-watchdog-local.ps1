@@ -340,7 +340,9 @@ $backendCommand = @(
   "`$env:NODE_ENV = 'development'"
   "`$env:PUBLIC_BACKEND = 'false'"
   "`$env:ENABLE_LOCAL_SCANS = 'true'"
-  "`$env:AUTH_REQUIRED = 'false'"
+  "`$env:AUTH_REQUIRED = 'true'"
+  "`$env:ALLOW_PUBLIC_LOCAL_SCANS = 'false'"
+  "`$env:PUBLIC_REQUEST_HOSTS = 'watchdog-chi.vercel.app,prance-mummified-subscript.ngrok-free.dev'"
   "`$env:CORS_ORIGINS = '$corsOrigins'"
   "Set-Location -LiteralPath $rootLiteral"
   '& npm.cmd run dev:backend'

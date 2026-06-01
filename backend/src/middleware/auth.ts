@@ -2,7 +2,8 @@ import { NextFunction, Request, Response } from 'express';
 import {
   getMissingAuthConfig,
   isAuthConfigured,
-  isAuthRequired,
+  isAuthRequiredForRequest,
+  isCookieSecureForRequest,
   SESSION_COOKIE_NAME,
   verifySessionCookie,
 } from '../auth/firebase';
@@ -12,7 +13,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return res.sendStatus(204);
   }
 
-  if (!isAuthRequired()) {
+  if (!isAuthRequiredForRequest(req)) {
     (req as any).authUser = {
       uid: 'local-dev',
       email: 'local@watchdog.local',
@@ -45,7 +46,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   } catch {
     res.clearCookie(SESSION_COOKIE_NAME, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isCookieSecureForRequest(req),
       sameSite: 'lax',
       path: '/',
     });

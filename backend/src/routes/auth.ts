@@ -5,7 +5,8 @@ import {
   FirebasePasswordSignInError,
   getMissingAuthConfig,
   isAuthConfigured,
-  isAuthRequired,
+  isAuthRequiredForRequest,
+  isCookieSecureForRequest,
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_MS,
   signInWithPassword,
@@ -104,11 +105,10 @@ function loginLockoutError(retryAfterSeconds: number) {
   };
 }
 
-function cookieOptions() {
-  const isPublicBackend = process.env.NODE_ENV === 'production' || process.env.PUBLIC_BACKEND === 'true';
+function cookieOptions(req?: any) {
   return {
     httpOnly: true,
-    secure: isPublicBackend,
+    secure: isCookieSecureForRequest(req),
     sameSite: 'lax' as const,
     path: '/',
     maxAge: SESSION_MAX_AGE_MS,
@@ -116,7 +116,7 @@ function cookieOptions() {
 }
 
 authRouter.get('/me', async (req, res) => {
-  if (!isAuthRequired()) {
+  if (!isAuthRequiredForRequest(req)) {
     return res.json({
       authenticated: true,
       authConfigured: isAuthConfigured(),
@@ -151,13 +151,13 @@ authRouter.get('/me', async (req, res) => {
       },
     });
   } catch {
-    res.clearCookie(SESSION_COOKIE_NAME, cookieOptions());
+    res.clearCookie(SESSION_COOKIE_NAME, cookieOptions(req));
     return res.json({ authenticated: false, authConfigured: true, authRequired: true });
   }
 });
 
 authRouter.post('/login', async (req, res) => {
-  if (!isAuthRequired()) {
+  if (!isAuthRequiredForRequest(req)) {
     return res.json({
       authenticated: true,
       authConfigured: isAuthConfigured(),
@@ -192,7 +192,7 @@ authRouter.post('/login', async (req, res) => {
     recordLoginSuccess(email);
 
     const sessionCookie = await createSessionCookie(login.idToken);
-    res.cookie(SESSION_COOKIE_NAME, sessionCookie, cookieOptions());
+    res.cookie(SESSION_COOKIE_NAME, sessionCookie, cookieOptions(req));
     return res.json({
       authenticated: true,
       authConfigured: true,
@@ -218,7 +218,7 @@ authRouter.post('/login', async (req, res) => {
   }
 });
 
-authRouter.post('/logout', (_req, res) => {
-  res.clearCookie(SESSION_COOKIE_NAME, cookieOptions());
+authRouter.post('/logout', (req, res) => {
+  res.clearCookie(SESSION_COOKIE_NAME, cookieOptions(req));
   res.json({ ok: true });
 });

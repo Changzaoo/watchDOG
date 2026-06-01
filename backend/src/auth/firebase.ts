@@ -28,6 +28,90 @@ function env(name: string): string {
   return process.env[name]?.trim() || '';
 }
 
+type HeaderValue = string | string[] | undefined;
+
+interface RequestLike {
+  headers?: Record<string, HeaderValue>;
+  get?: (name: string) => string | undefined;
+}
+
+function readHeader(req: RequestLike | undefined, name: string): string {
+  if (!req) return '';
+
+  const fromGetter = req.get?.(name);
+  if (fromGetter) return fromGetter;
+
+  const value = req.headers?.[name.toLowerCase()];
+  return Array.isArray(value) ? value.join(',') : value || '';
+}
+
+function hostFromUrl(value: string): string {
+  try {
+    return new URL(value).host;
+  } catch {
+    return value;
+  }
+}
+
+function normalizeHost(value: string): string {
+  const host = hostFromUrl(value)
+    .trim()
+    .toLowerCase()
+    .replace(/^\[/, '')
+    .replace(/\]$/, '');
+
+  if (!host) return '';
+  const colonAt = host.lastIndexOf(':');
+  return colonAt > -1 ? host.slice(0, colonAt) : host;
+}
+
+function splitHeaderValues(value: string): string[] {
+  return value
+    .split(',')
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
+function forwardedHosts(value: string): string[] {
+  return splitHeaderValues(value)
+    .flatMap(part => part.split(';').map(item => item.trim()))
+    .filter(part => /^host=/i.test(part))
+    .map(part => part.slice(part.indexOf('=') + 1).replace(/^"|"$/g, ''));
+}
+
+function isLocalRequestHost(value: string): boolean {
+  const host = normalizeHost(value);
+  return !host ||
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    host === '127.0.0.1' ||
+    host === '0.0.0.0' ||
+    host === '::1';
+}
+
+export function isPublicRequest(req?: RequestLike): boolean {
+  const configuredPublicHosts = (process.env.PUBLIC_REQUEST_HOSTS || '')
+    .split(',')
+    .map(normalizeHost)
+    .filter(Boolean);
+
+  const candidates = [
+    ...splitHeaderValues(readHeader(req, 'host')),
+    ...splitHeaderValues(readHeader(req, 'x-forwarded-host')),
+    ...splitHeaderValues(readHeader(req, 'x-original-host')),
+    ...splitHeaderValues(readHeader(req, 'origin')),
+    ...splitHeaderValues(readHeader(req, 'referer')),
+    ...forwardedHosts(readHeader(req, 'forwarded')),
+  ];
+
+  return candidates.some(candidate => {
+    const host = normalizeHost(candidate);
+    if (isLocalRequestHost(host)) return false;
+    if (configuredPublicHosts.includes(host)) return true;
+    return true;
+  });
+}
+
 function decodeBase64(value: string): string {
   try {
     return Buffer.from(value, 'base64').toString('utf8').trim();
@@ -105,6 +189,16 @@ export function isAuthConfigured(): boolean {
 
 export function isAuthRequired(): boolean {
   return process.env.NODE_ENV === 'production' || env('AUTH_REQUIRED') === 'true';
+}
+
+export function isAuthRequiredForRequest(req?: RequestLike): boolean {
+  return isAuthRequired() || isPublicRequest(req);
+}
+
+export function isCookieSecureForRequest(req?: RequestLike): boolean {
+  return process.env.NODE_ENV === 'production' ||
+    env('PUBLIC_BACKEND') === 'true' ||
+    isPublicRequest(req);
 }
 
 export function getFirebaseAuth() {

@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import 'express-async-errors';
 import express from 'express';
+import type { Request } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -11,7 +12,7 @@ import { findingsRouter } from './routes/findings';
 import { eventsRouter } from './routes/events';
 import { rulesRouter } from './routes/rules';
 import { prisma } from './db/client';
-import { getMissingAuthConfig, isAuthConfigured, isAuthRequired } from './auth/firebase';
+import { getMissingAuthConfig, isAuthConfigured, isAuthRequiredForRequest, isPublicRequest } from './auth/firebase';
 import { requireAuth } from './middleware/auth';
 
 const app = express();
@@ -22,6 +23,14 @@ const HOST = process.env.HOST || (isPublicBackend ? '0.0.0.0' : '127.0.0.1');
 const localScansEnabled = isPublicBackend
   ? process.env.ENABLE_LOCAL_SCANS === 'true' && process.env.ALLOW_LOCAL_SCANS_ON_PUBLIC_BACKEND === 'true'
   : process.env.ENABLE_LOCAL_SCANS === 'true' || !isProduction;
+
+function areLocalScansEnabledForRequest(req?: Request): boolean {
+  if (req && isPublicRequest(req) && process.env.ALLOW_PUBLIC_LOCAL_SCANS !== 'true') {
+    return false;
+  }
+
+  return localScansEnabled;
+}
 
 app.disable('x-powered-by');
 
@@ -113,8 +122,14 @@ app.use('/api/scans/url', scanLimiter);
 app.use('/api/auth', authRouter);
 app.use('/api', requireAuth);
 
-app.use('/api/scans/local', (_req, res, next) => {
-  if (localScansEnabled) return next();
+app.use('/api/scans/local', (req, res, next) => {
+  if (isPublicRequest(req) && process.env.ALLOW_PUBLIC_LOCAL_SCANS !== 'true') {
+    return res.status(403).json({
+      error: 'Scan local esta bloqueado em acessos publicos via Vercel/ngrok.',
+    });
+  }
+
+  if (areLocalScansEnabledForRequest(req)) return next();
   return res.status(403).json({
     error: 'Scan local esta desabilitado neste backend hospedado. Use a versao local para analisar pastas do seu computador.',
   });
@@ -127,16 +142,16 @@ app.use('/api/events', eventsRouter);
 app.use('/api/rules', rulesRouter);
 
 // Health check
-app.get('/health', (_req, res) => {
+app.get('/health', (req, res) => {
   const health: Record<string, unknown> = {
     status: 'ok',
     version: '1.0.0',
-    localScansEnabled,
+    localScansEnabled: areLocalScansEnabledForRequest(req),
     timestamp: new Date().toISOString(),
   };
 
   if (!isPublicBackend || process.env.EXPOSE_HEALTH_DETAILS === 'true') {
-    health.authRequired = isAuthRequired();
+    health.authRequired = isAuthRequiredForRequest(req);
     health.authConfigured = isAuthConfigured();
     health.authMissingConfig = getMissingAuthConfig();
   }

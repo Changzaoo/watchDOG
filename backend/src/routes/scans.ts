@@ -16,10 +16,15 @@ import {
 } from '@sentinelscope/scanner';
 import { Scan, Finding, ScanSummary } from '@sentinelscope/shared';
 import { scanEventEmitters } from './events';
+import { isPublicRequest } from '../auth/firebase';
 
 export const scansRouter = Router();
 
-function areLocalScansEnabled(): boolean {
+function areLocalScansEnabled(req?: Request): boolean {
+  if (req && isPublicRequest(req) && process.env.ALLOW_PUBLIC_LOCAL_SCANS !== 'true') {
+    return false;
+  }
+
   const isProduction = process.env.NODE_ENV === 'production';
   const isPublicBackend = isProduction || process.env.PUBLIC_BACKEND === 'true';
   if (isPublicBackend) {
@@ -28,10 +33,10 @@ function areLocalScansEnabled(): boolean {
   return process.env.ENABLE_LOCAL_SCANS === 'true' || !isProduction;
 }
 
-function visibleScanWhere(id?: string) {
+function visibleScanWhere(id?: string, req?: Request) {
   const where: { id?: string; type?: string } = {};
   if (id) where.id = id;
-  if (!areLocalScansEnabled()) where.type = 'url';
+  if (!areLocalScansEnabled(req)) where.type = 'url';
   return where;
 }
 
@@ -63,7 +68,7 @@ async function applyRuleConfigs<T extends { ruleId: string; severity: string }>(
 
 // POST /api/scans/local
 scansRouter.post('/local', async (req: Request, res: Response) => {
-  if (!areLocalScansEnabled()) {
+  if (!areLocalScansEnabled(req)) {
     return res.status(403).json({
       error: 'Scan local esta desabilitado neste backend hospedado. Use a versao local para analisar pastas do seu computador.',
     });
@@ -159,9 +164,9 @@ scansRouter.post('/url', async (req: Request, res: Response) => {
 });
 
 // GET /api/scans
-scansRouter.get('/', async (_req: Request, res: Response) => {
+scansRouter.get('/', async (req: Request, res: Response) => {
   const scans = await prisma.scan.findMany({
-    where: visibleScanWhere(),
+    where: visibleScanWhere(undefined, req),
     orderBy: { createdAt: 'desc' },
     take: 50,
   });
@@ -178,7 +183,7 @@ scansRouter.get('/', async (_req: Request, res: Response) => {
 // GET /api/scans/:id
 scansRouter.get('/:id', async (req: Request, res: Response) => {
   const scan = await prisma.scan.findFirst({
-    where: visibleScanWhere(req.params.id),
+    where: visibleScanWhere(req.params.id, req),
     include: { findings: true, logs: { orderBy: { createdAt: 'asc' }, take: 500 } },
   });
 
@@ -194,7 +199,7 @@ scansRouter.get('/:id', async (req: Request, res: Response) => {
 // GET /api/scans/:id/findings
 scansRouter.get('/:id/findings', async (req: Request, res: Response) => {
   const scan = await prisma.scan.findFirst({
-    where: visibleScanWhere(req.params.id),
+    where: visibleScanWhere(req.params.id, req),
     select: { id: true },
   });
   if (!scan) return res.status(404).json({ error: 'Scan nÃ£o encontrado' });
@@ -209,7 +214,7 @@ scansRouter.get('/:id/findings', async (req: Request, res: Response) => {
 // GET /api/scans/:id/threat-model
 scansRouter.get('/:id/threat-model', async (req: Request, res: Response) => {
   const scan = await prisma.scan.findFirst({
-    where: visibleScanWhere(req.params.id),
+    where: visibleScanWhere(req.params.id, req),
     select: { id: true },
   });
   if (!scan) return res.status(404).json({ error: 'Scan nÃ£o encontrado' });
@@ -229,7 +234,7 @@ scansRouter.get('/:id/threat-model', async (req: Request, res: Response) => {
 // GET /api/scans/:id/defense-depth
 scansRouter.get('/:id/defense-depth', async (req: Request, res: Response) => {
   const scan = await prisma.scan.findFirst({
-    where: visibleScanWhere(req.params.id),
+    where: visibleScanWhere(req.params.id, req),
     select: { id: true },
   });
   if (!scan) return res.status(404).json({ error: 'Scan nÃ£o encontrado' });
@@ -244,7 +249,7 @@ scansRouter.get('/:id/defense-depth', async (req: Request, res: Response) => {
 // GET /api/scans/:id/export/checklist
 scansRouter.get('/:id/export/checklist', async (req: Request, res: Response) => {
   const scan = await prisma.scan.findFirst({
-    where: visibleScanWhere(req.params.id),
+    where: visibleScanWhere(req.params.id, req),
     include: { findings: { orderBy: [{ severity: 'asc' }] } },
   });
   if (!scan) return res.status(404).json({ error: 'Scan não encontrado' });
@@ -280,7 +285,7 @@ scansRouter.get('/:id/export/checklist', async (req: Request, res: Response) => 
 // GET /api/scans/:id/export/json
 scansRouter.get('/:id/export/json', async (req: Request, res: Response) => {
   const scan = await prisma.scan.findFirst({
-    where: visibleScanWhere(req.params.id),
+    where: visibleScanWhere(req.params.id, req),
     include: { findings: true },
   });
   if (!scan) return res.status(404).json({ error: 'Scan não encontrado' });
@@ -306,7 +311,7 @@ scansRouter.get('/:id/export/json', async (req: Request, res: Response) => {
 // GET /api/scans/:id/export/markdown
 scansRouter.get('/:id/export/markdown', async (req: Request, res: Response) => {
   const scan = await prisma.scan.findFirst({
-    where: visibleScanWhere(req.params.id),
+    where: visibleScanWhere(req.params.id, req),
     include: { findings: true },
   });
   if (!scan) return res.status(404).json({ error: 'Scan não encontrado' });
@@ -332,7 +337,7 @@ scansRouter.get('/:id/export/markdown', async (req: Request, res: Response) => {
 // GET /api/scans/:id/export/pdf
 scansRouter.get('/:id/export/pdf', async (req: Request, res: Response) => {
   const scan = await prisma.scan.findFirst({
-    where: visibleScanWhere(req.params.id),
+    where: visibleScanWhere(req.params.id, req),
     include: { findings: true },
   });
   if (!scan) return res.status(404).json({ error: 'Scan não encontrado' });
