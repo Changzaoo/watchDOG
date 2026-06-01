@@ -8,6 +8,8 @@
     "dev:frontend": "npm run dev --workspace=frontend",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:desktop": "echo Open http://localhost:5173 after running npm run dev",
+    "dev:local:auto": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-watchdog-local.ps1",
+    "startup:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-windows-startup.ps1",
     "build": "npm run build --workspace=shared && npm run build --workspace=scanner && npm run build --workspace=backend && npm run build --workspace=frontend",
     "start": "npm run start --workspace=backend",
     "lint": "npm run lint --workspaces --if-present",

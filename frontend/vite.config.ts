@@ -14,9 +14,18 @@ function readBackendPort() {
   }
 }
 
+function readFrontendPort() {
+  const rawPort = process.env.VITE_DEV_PORT || process.env.FRONTEND_PORT;
+  const port = Number(rawPort);
+  if (Number.isInteger(port) && port > 0 && port <= 65535) return port;
+  return 5173;
+}
+
 const backendTarget = process.env.VITE_BACKEND_URL ||
   process.env.BACKEND_URL ||
   `http://localhost:${readBackendPort()}`;
+const devHost = process.env.VITE_DEV_HOST;
+const strictPort = process.env.VITE_STRICT_PORT === 'true';
 
 export default defineConfig({
   plugins: [react()],
@@ -27,7 +36,9 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: readFrontendPort(),
+    ...(devHost ? { host: devHost } : {}),
+    strictPort,
     proxy: {
       '/api': {
         target: backendTarget,
