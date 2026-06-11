@@ -16,7 +16,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "setup": "npm install && npm run build --workspace=shared && npm run prisma:generate --workspace=backend",
-    "render:migrate": "node scripts/render/migrate-render.js"
+    "render:migrate": "node scripts/render/migrate-render.js",
+    "render:create-migrate": "node scripts/render/create-and-migrate-render.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.0",

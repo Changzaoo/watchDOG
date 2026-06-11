@@ -62,3 +62,29 @@ Next actions I can take for you
 - Run additional automation to migrate secret files to Render (the API supports secret-files endpoint).
 
 Tell me which of the above you want me to do next.
+
+Create a new service and migrate everything (env-vars + secret files)
+---------------------------------------------------------------
+
+The repository now includes a helper that will create a new Render service using the existing service's configuration and migrate its environment variables and secret files.
+
+Usage (preferred via `npm`):
+
+PowerShell:
+
+```powershell
+$env:RENDER_API_KEY = "<your-render-api-key>"
+npm run render:create-migrate -- <old-service-name> <new-service-name-optional>
+```
+
+Bash/macOS/Linux:
+
+```bash
+export RENDER_API_KEY="<your-render-api-key>"
+npm run render:create-migrate -- <old-service-name> <new-service-name-optional>
+```
+
+Notes:
+- The script requires an API key with permission to create services in the target workspace. It will attempt to reuse the old service's `ownerId` by default.
+- It migrates env-vars and secret-files and will create a persistent disk if the original service had one.
+- Review the new service in the Render Dashboard after creation (domains, IP allow-lists, custom domains, and other settings may need manual adjustment).
