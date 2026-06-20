@@ -97,11 +97,38 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
   const mainResponse = await safeGet(url, customHeaders);
 
   if (mainResponse.error) {
-    log('error', `Falha ao conectar: ${mainResponse.error}`);
+    // Não retorna vazio: registra um achado explicativo para o usuário entender
+    // por que "não veio nada" (alvo inacessível, anti-bot/WAF, rate limit, etc.).
+    log('error', `Não foi possível obter uma resposta analisável de ${url}: ${mainResponse.error}`);
+    addFinding(
+      'SCAN_001', 'Alvo inacessível ou bloqueou o scanner', 'Conectividade', 'info',
+      `O watchDOG não recebeu uma resposta HTTP analisável de ${url}. Motivo reportado: ${mainResponse.error}.`,
+      'Sites grandes ou bem protegidos costumam bloquear scanners automatizados (WAF, anti-bot, rate limiting) — o que, em si, é um sinal positivo de postura defensiva, mas impede a análise passiva de headers a partir desta origem.',
+      'Confirme conectividade e resolução de DNS; rode o watchDOG a partir de uma origem autorizada; reduza a profundidade do scan; ou audite o projeto localmente. Não aumente a taxa de requisições para "forçar" — isso caracteriza abuso.',
+      mainResponse.error,
+      undefined,
+      undefined,
+      'high'
+    );
     return { findings, techStack, logs };
   }
 
-  log('info', `Status HTTP: ${mainResponse.statusCode} | Redirects: ${mainResponse.redirectChain.length}`);
+  log('info', `Status HTTP: ${mainResponse.statusCode} | Redirects: ${mainResponse.redirectChain.length}${mainResponse.truncated ? ' | corpo truncado' : ''}`);
+
+  // Sinal de postura: o alvo aplica anti-abuso/WAF/limite a requisições automatizadas.
+  if ([401, 403, 429, 503].includes(mainResponse.statusCode)) {
+    log('warn', `Alvo respondeu ${mainResponse.statusCode} — possível anti-bot/WAF/rate limit.`);
+    addFinding(
+      'POSTURE_001', 'Alvo aplica proteção anti-abuso a requisições automatizadas', 'Resiliência', 'info',
+      `A página principal respondeu HTTP ${mainResponse.statusCode} a uma requisição automatizada, indicando WAF, anti-bot ou rate limiting na borda.`,
+      'Proteção anti-abuso é desejável: dificulta scraping, brute force e DoS. A análise de headers segue possível, mas alguns recursos podem não ser sondáveis de forma passiva.',
+      'Mantenha a proteção. Para auditar internamente, execute a análise a partir de uma origem permitida (allowlist) ou em ambiente de homologação.',
+      `HTTP ${mainResponse.statusCode}`,
+      undefined,
+      undefined,
+      'medium'
+    );
+  }
 
   // Check HTTPS
   if (!url.startsWith('https://')) {
@@ -243,8 +270,22 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
     ? SAFE_PATHS_TO_CHECK.slice(0, 5)
     : [...SAFE_PATHS_TO_CHECK, ...EXTRA_PATHS_TO_CHECK];
 
+  // Breaker educado: se o alvo passar a bloquear/limitar, interrompe a sondagem
+  // para não sobrecarregá-lo nem parecer um ataque.
+  let consecutiveBlocks = 0;
+
   for (const checkPathStr of pathsToCheck) {
     const resp = await checkPath(url, checkPathStr);
+
+    if (resp.error || [403, 429, 503].includes(resp.statusCode)) {
+      consecutiveBlocks++;
+      if (consecutiveBlocks >= 3) {
+        log('warn', 'Sondagem de caminhos interrompida: o alvo começou a bloquear/limitar. O watchDOG recua para não sobrecarregar nem caracterizar abuso.');
+        break;
+      }
+      continue;
+    }
+    consecutiveBlocks = 0;
 
     if (resp.statusCode === 200) {
       log('info', `Caminho acessível: ${checkPathStr} (${resp.statusCode})`);
