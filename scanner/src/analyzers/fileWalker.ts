@@ -22,6 +22,20 @@ const IGNORED_EXTENSIONS = new Set([
 
 const MAX_FILE_SIZE = 500 * 1024; // 500KB
 const MAX_FILES = 5000;
+const MAX_DEPTH = 25; // profundidade máxima de diretório (repos patológicos)
+const BINARY_SNIFF_BYTES = 8 * 1024; // primeiros KB checados para NUL byte
+
+/**
+ * Heurística simples de binário: presença de NUL byte (0x00) nos primeiros KB.
+ * Arquivos de código/texto normalmente não contêm NUL.
+ */
+function looksBinary(content: string): boolean {
+  const limit = Math.min(content.length, BINARY_SNIFF_BYTES);
+  for (let i = 0; i < limit; i++) {
+    if (content.charCodeAt(i) === 0) return true;
+  }
+  return false;
+}
 
 export async function walkFiles(
   dir: string,
@@ -31,8 +45,9 @@ export async function walkFiles(
   const allowedExts = extensions ? new Set(extensions) : null;
   let fileCount = 0;
 
-  async function walk(currentDir: string): Promise<void> {
+  async function walk(currentDir: string, depth: number): Promise<void> {
     if (fileCount >= MAX_FILES) return;
+    if (depth > MAX_DEPTH) return;
 
     let entries: fs.Dirent[];
     try {
@@ -48,7 +63,7 @@ export async function walkFiles(
 
       if (entry.isDirectory()) {
         if (!IGNORED_DIRS.has(entry.name) && !entry.name.startsWith('.')) {
-          await walk(fullPath);
+          await walk(fullPath, depth + 1);
         }
       } else if (entry.isFile()) {
         const ext = path.extname(entry.name).toLowerCase();
@@ -71,13 +86,22 @@ export async function walkFiles(
           continue;
         }
 
-        results.push({ path: fullPath, content, size: stat.size });
+        // Pula binários detectados por NUL byte (além do filtro por extensão).
+        if (looksBinary(content)) continue;
+
+        results.push({
+          path: fullPath,
+          content,
+          size: stat.size,
+          ext,
+          normPath: fullPath.replace(/\\/g, '/'),
+        });
         fileCount++;
       }
     }
   }
 
-  await walk(dir);
+  await walk(dir, 0);
   return results;
 }
 

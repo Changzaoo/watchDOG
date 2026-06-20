@@ -30,19 +30,22 @@ watchDOG é uma ferramenta de auditoria de segurança defensiva que analisa:
 - **Threat model**: ativos, perfis de atacante, superfícies de ataque e lacunas de controle
 - **Defense depth**: leitura por camadas defensivas para priorizar correções
 
-### Categorias de análise:
-- 🔐 Secrets e credenciais hardcoded
-- 📦 Dependências vulneráveis
-- 🔑 Autenticação (JWT, bcrypt, sessão)
-- 🛡️ Autorização (IDOR, RBAC, RLS)
-- 📤 Upload de arquivos
-- 🌐 Headers HTTP de segurança
+### Categorias de análise (240+ regras):
+- 🔐 Secrets e credenciais hardcoded (AWS/GCP/Azure, OpenAI/Anthropic, GitHub/GitLab, Stripe, chaves PEM, connection strings)
+- 📦 Dependências vulneráveis (CVEs 2026) e **supply chain** (typosquatting, postinstall malicioso, lockfile tampering, IOCs de worms)
+- 💉 **Injeção e execução** (SQLi, NoSQLi, Command Injection, SSTI, XXE, prototype pollution, desserialização insegura, path traversal, open redirect)
+- 🌐 **SSRF** server-side
+- 🔑 Autenticação e **JWT** (alg:none, algorithm confusion, segredo fraco, ignoreExpiration)
+- 🛡️ Autorização (IDOR/BOLA, mass assignment, OAuth/PKCE, RBAC, RLS)
+- 🚦 **DoS & Resiliência** (ReDoS, falta de rate limiting, Slowloris/timeouts, GraphQL depth, zip bombs, HTTP/2 Rapid Reset)
+- 🍪 Cookies e **headers** de segurança (CSP fraco, HSTS quality, COOP/COEP/CORP, SameSite, WAF/CDN, rate-limit headers)
 - 🔄 Configuração de CORS
-- 🐳 Docker e CI/CD
+- 🐳 Docker, **Kubernetes**, **Terraform/IaC** e **CI/CD** (GitHub Actions: script injection, pull_request_target, actions não fixadas)
+- 🤖 **LLM/IA** (prompt injection, saída insegura, chaves de IA no client-side, excessive agency)
 - 🗄️ Banco de dados
-- ⛓️ Web3 (Solidity)
+- ⛓️ Web3 (reentrancy, tx.origin, selfdestruct, delegatecall, aleatoriedade insegura)
 - 📝 Logs com dados sensíveis
-- 🇧🇷 Privacidade e LGPD
+- 🇧🇷 Privacidade e LGPD (PII, CPF, cartão)
 
 ---
 
@@ -129,11 +132,11 @@ Backend API: http://localhost:3001
 | 25-49 | Crítico | Sérios problemas. Corrija imediatamente. |
 | 0-24 | Muito Crítico | Não exponha em produção. |
 
-O score é calculado com base na severidade dos achados:
-- Crítico: -20 pontos cada
-- Alto: -10 pontos cada
-- Médio: -5 pontos cada
-- Baixo: -2 pontos cada
+O score é calculado com base na severidade, **confiança** e **categoria** dos achados (penalidade ponderada com retornos decrescentes por categoria), e aplica **tetos de segurança**:
+- Qualquer achado **crítico** aberto → score no máximo **49**
+- Qualquer achado **alto** aberto → score no máximo **74**
+
+Isso evita que um projeto com 1 RCE crítica exiba um score "bom". Pesos base: crítico 40, alto 20, médio 8, baixo 3, info 0.5 — modulados por confiança (alta 1.0, média 0.7, baixa 0.4).
 
 ---
 
@@ -183,7 +186,7 @@ sentinelscope/
 ├── shared/          # Tipos TypeScript compartilhados
 ├── scanner/         # Engine de análise
 │   └── src/
-│       ├── rules/   # 80+ regras de segurança
+│       ├── rules/   # 214 regras de código + 22 regras HTTP (240+ no total)
 │       ├── analyzers/  # Analisadores de projeto, URL, dependências
 │       └── utils/   # Utilitários (mascaramento, severity, HTTP)
 ├── backend/         # API Express + SQLite + SSE

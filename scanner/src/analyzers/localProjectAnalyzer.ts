@@ -5,7 +5,7 @@ import { FileRule } from '../types';
 import { walkFiles, checkFileExists } from './fileWalker';
 import { detectTechStack } from './techDetector';
 import { analyzeDependencies } from './dependencyAnalyzer';
-import { findAllMatches } from '../utils/lineFinder';
+import { findAllMatchesMultiline } from '../utils/lineFinder';
 import { extractAndMaskSecret } from '../utils/maskSecret';
 import { generateFixPrompt, generateSecretFixPrompt } from '../utils/fixPromptGenerator';
 import { validateLocalPath } from '../utils/urlValidator';
@@ -26,7 +26,49 @@ const STEPS = [
   { key: 'report', label: 'Gerando relatório', progress: 95 },
 ];
 
-const SECRET_RULE_IDS = new Set(['SECRET_001', 'SECRET_002', 'SECRET_003', 'SECRET_004', 'SECRET_005', 'SECRET_006', 'SECRET_007', 'SECRET_008', 'SECRET_009', 'SECRET_010', 'SECRET_011', 'SECRET_012']);
+// Categorias tratadas como "secret" para fins de fix prompt especializado.
+const SECRET_CATEGORIES = new Set(['Secrets', 'Credenciais']);
+
+/**
+ * Considera uma regra como "de secret" (recebe generateSecretFixPrompt) quando o id
+ * começa com 'SECRET_' OU a categoria é 'Secrets'/'Credenciais'. Assim novas regras
+ * (SECRET_013..020 e futuras) são tratadas automaticamente sem manutenção de lista fixa.
+ */
+function isSecretRule(rule: FileRule): boolean {
+  return rule.id.startsWith('SECRET_') || SECRET_CATEGORIES.has(rule.category);
+}
+
+// Tamanho do lote de arquivos entre yields cooperativos (não trava o event loop/SSE).
+const FILE_BATCH_SIZE = 25;
+
+const BUCKET_ANY = '__any__';
+
+/**
+ * Índice invertido de regras por extensão + bucket para regras sem fileExtensions
+ * (que dependem só de fileNamePatterns/requireContent). Construído UMA vez na carga.
+ */
+function buildRuleBuckets(rules: FileRule[]): {
+  rulesByExt: Map<string, FileRule[]>;
+  rulesAnyExt: FileRule[];
+} {
+  const rulesByExt = new Map<string, FileRule[]>();
+  const rulesAnyExt: FileRule[] = [];
+  for (const r of rules) {
+    if (r.fileExtensions && r.fileExtensions.length) {
+      for (const e of r.fileExtensions) {
+        const ext = e.toLowerCase();
+        const arr = rulesByExt.get(ext);
+        if (arr) arr.push(r);
+        else rulesByExt.set(ext, [r]);
+      }
+    } else {
+      rulesAnyExt.push(r);
+    }
+  }
+  return { rulesByExt, rulesAnyExt };
+}
+
+const { rulesByExt: RULES_BY_EXT, rulesAnyExt: RULES_ANY_EXT } = buildRuleBuckets(ALL_RULES);
 
 export async function analyzeLocalProject(opts: LocalScanOptions): Promise<ScanResultRaw> {
   const { projectPath, scanId, onEvent } = opts;
@@ -49,7 +91,7 @@ export async function analyzeLocalProject(opts: LocalScanOptions): Promise<ScanR
     evidence?: string,
     overrideOccurrences?: number
   ) {
-    const isSecret = SECRET_RULE_IDS.has(rule.id);
+    const isSecret = isSecretRule(rule);
     const fixPrompt = isSecret
       ? generateSecretFixPrompt(rule, filePath)
       : generateFixPrompt(rule, filePath, line);
@@ -101,6 +143,22 @@ export async function analyzeLocalProject(opts: LocalScanOptions): Promise<ScanR
   const files = await walkFiles(projectPath);
   log('info', `${files.length} arquivos para análise`);
 
+  // Supressão cross-file: regras de postura (ex.: "Express sem rate limiting") são
+  // ignoradas no projeto inteiro quando a proteção correspondente existe em qualquer
+  // arquivo. Calculado UMA vez para evitar falso-positivo entre arquivos.
+  const suppressedRuleIds = new Set<string>();
+  for (const rule of ALL_RULES) {
+    if (rule.suppressIfProjectMatches) {
+      const re = rule.suppressIfProjectMatches;
+      if (files.some(f => re.test(f.content))) {
+        suppressedRuleIds.add(rule.id);
+      }
+    }
+  }
+  if (suppressedRuleIds.size > 0) {
+    log('info', `${suppressedRuleIds.size} regra(s) de postura suprimida(s) (proteção detectada no projeto): ${[...suppressedRuleIds].join(', ')}`);
+  }
+
   const sensitiveFileNames = [
     '.env', '.env.local', '.env.production', '.env.staging', '.env.development',
     'serviceAccountKey.json', 'firebase-adminsdk.json',
@@ -148,43 +206,72 @@ export async function analyzeLocalProject(opts: LocalScanOptions): Promise<ScanR
   }
   log('info', `${depIssues.length} problemas de dependências`);
 
-  // STEP 4-6: Apply file rules
+  // STEP 4-6: Single-pass — aplica todas as regras por arquivo via buckets de extensão.
+  // Os "steps" abaixo são apenas marcos de progresso; não há re-scan de disco.
   progress(STEPS[3].label, STEPS[3].progress);
   log('info', STEPS[3].label);
 
-  // Deduplication: track key -> { count, firstFinding }
-  const dedupeMap = new Map<string, { count: number; idx: number }>();
+  // Dedupe por ruleId::path::line; mantém contagem de ocorrências por (ruleId, path).
+  const seen = new Set<string>();
+  const occMap = new Map<string, { count: number; idx: number }>();
 
-  for (const file of files) {
-    const ext = path.extname(file.path).toLowerCase();
+  // Faixa de progresso reservada à varredura single-pass: do step "auth" ao "code".
+  const scanStartPct = STEPS[3].progress; // 45
+  const scanEndPct = STEPS[4].progress;   // 65
+  const totalFiles = files.length || 1;
 
-    for (const rule of ALL_RULES) {
-      if (rule.fileExtensions && !rule.fileExtensions.includes(ext)) continue;
+  for (let fi = 0; fi < files.length; fi++) {
+    const file = files[fi];
+    const ext = file.ext ?? path.extname(file.path).toLowerCase();
+    const normPath = file.normPath ?? file.path.replace(/\\/g, '/');
+    const content = file.content;
+
+    // candidates = regras da extensão + regras "any" (dependem de fileNamePatterns).
+    const byExt = RULES_BY_EXT.get(ext);
+    const candidates = byExt ? [...byExt, ...RULES_ANY_EXT] : RULES_ANY_EXT;
+
+    for (const rule of candidates) {
+      // Regra de postura suprimida por proteção presente em outro arquivo do projeto.
+      if (suppressedRuleIds.has(rule.id)) continue;
+
+      // Filtro por nome de arquivo (caminho normalizado com '/').
       if (rule.fileNamePatterns) {
-        const matchesName = rule.fileNamePatterns.some(p => p.test(file.path.replace(/\\/g, '/')));
+        const matchesName = rule.fileNamePatterns.some(p => p.test(normPath));
         if (!matchesName) continue;
       }
 
+      // Gate de conteúdo: a regra só se aplica se o conteúdo casar requireContent.
+      if (rule.requireContent && !rule.requireContent.test(content)) continue;
+
       for (const pattern of rule.patterns) {
-        const matches = findAllMatches(file.content, pattern, file.path);
+        const matches = findAllMatchesMultiline(content, pattern, file.path);
         if (matches.length === 0) continue;
 
-        // Use first match for evidence
         const firstMatch = matches[0];
-        const dedupeKey = `${rule.id}:${path.relative(projectPath, file.path)}`;
+        const occKey = `${rule.id}::${path.relative(projectPath, file.path)}`;
+        const dedupeKey = `${rule.id}::${file.path}::${firstMatch.line}`;
 
-        const existing = dedupeMap.get(dedupeKey);
+        const existing = occMap.get(occKey);
         if (existing) {
-          // Increment occurrence count on the first finding
+          // Já há finding para (regra, arquivo): só incrementa ocorrências.
           const f = findings[existing.idx];
-          if (f) (f as any).occurrences = (existing.count + matches.length);
-          dedupeMap.set(dedupeKey, { count: existing.count + matches.length, idx: existing.idx });
-        } else {
+          const newCount = existing.count + matches.length;
+          if (f) (f as any).occurrences = newCount;
+          occMap.set(occKey, { count: newCount, idx: existing.idx });
+        } else if (!seen.has(dedupeKey)) {
+          seen.add(dedupeKey);
           const { masked } = extractAndMaskSecret(firstMatch.text);
           addFinding(rule, file.path, firstMatch.line, masked.slice(0, 200), matches.length);
-          dedupeMap.set(dedupeKey, { count: matches.length, idx: findings.length - 1 });
+          occMap.set(occKey, { count: matches.length, idx: findings.length - 1 });
         }
       }
+    }
+
+    // Yield cooperativo a cada lote: não trava o event loop / heartbeat SSE.
+    if ((fi + 1) % FILE_BATCH_SIZE === 0) {
+      const pct = scanStartPct + Math.round(((fi + 1) / totalFiles) * (scanEndPct - scanStartPct));
+      progress(STEPS[4].label, Math.min(pct, scanEndPct));
+      await new Promise<void>(r => setImmediate(r));
     }
   }
 

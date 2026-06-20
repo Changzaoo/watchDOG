@@ -4,7 +4,10 @@ import express from 'express';
 import type { Request } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import hpp from 'hpp';
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import slowDown from 'express-slow-down';
 import cookieParser from 'cookie-parser';
 import { authRouter } from './routes/auth';
 import { scansRouter } from './routes/scans';
@@ -77,6 +80,22 @@ app.use(helmet({
   contentSecurityPolicy: false,
 }));
 
+// Proteção contra HTTP Parameter Pollution (ex.: ?a=1&a=2 vira array inesperado).
+app.use(hpp());
+
+// Compressão seletiva: NÃO comprimir streams SSE (text/event-stream), pois a
+// compressão segura buffers e quebra o fluxo de eventos em tempo real.
+app.use(compression({
+  threshold: 1024,
+  filter: (req, res) => {
+    const accept = req.headers['accept'];
+    if (typeof accept === 'string' && accept.includes('text/event-stream')) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+}));
+
 app.use(cors({
   origin(origin, callback) {
     if (!origin || isAllowedCorsOrigin(origin)) return callback(null, true);
@@ -87,7 +106,7 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '256kb' }));
-app.use(express.urlencoded({ extended: true, limit: '256kb' }));
+app.use(express.urlencoded({ extended: false, limit: '256kb' }));
 app.use(cookieParser());
 
 // Rate limiting
@@ -116,9 +135,18 @@ const scanLimiter = rateLimit({
   message: { error: 'Too many scan requests' },
 });
 
+// Atraso progressivo (anti brute-force) nas rotas de autenticação: após as 5
+// primeiras requisições na janela, cada requisição extra ganha +500ms acumulativos.
+const authSlowDown = slowDown({
+  windowMs: 15 * 60 * 1000,
+  delayAfter: 5,
+  delayMs: () => 500,
+});
+
 app.use('/api/auth/login', loginLimiter);
 app.use('/api', apiLimiter);
 app.use('/api/scans/url', scanLimiter);
+app.use('/api/auth', authSlowDown);
 app.use('/api/auth', authRouter);
 app.use('/api', requireAuth);
 
@@ -188,9 +216,44 @@ async function main() {
     process.exit(1);
   }
 
-  app.listen(Number(PORT), HOST, () => {
+  const server = app.listen(Number(PORT), HOST, () => {
     console.log(`watchDOG Backend running on http://${HOST}:${PORT}`);
     console.log(`Health check: http://${HOST}:${PORT}/health`);
+  });
+
+  // Timeouts de servidor/socket (anti-Slowloris). Nunca usar 0.
+  server.requestTimeout = 30_000;   // tempo máximo para receber a requisição inteira
+  server.headersTimeout = 20_000;   // tempo máximo para receber os headers
+  server.keepAliveTimeout = 5_000;  // mantém-se acima do timeout do LB para evitar 502
+  server.setTimeout(35_000);        // timeout de socket ocioso
+
+  // Graceful shutdown: para de aceitar conexões, fecha o servidor e desconecta o
+  // Prisma; se travar, força a saída após 10s (timer unref para não segurar o loop).
+  let shuttingDown = false;
+  async function shutdown(signal: string) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`Recebido ${signal}, encerrando graciosamente...`);
+
+    const forceExit = setTimeout(() => {
+      console.error('Encerramento forçado após timeout.');
+      process.exit(1);
+    }, 10_000);
+    forceExit.unref();
+
+    server.close(async () => {
+      try {
+        await prisma.$disconnect();
+      } catch (e) {
+        console.error('Erro ao desconectar o banco:', e);
+      }
+      clearTimeout(forceExit);
+      process.exit(0);
+    });
+  }
+
+  (['SIGTERM', 'SIGINT'] as const).forEach((signal) => {
+    process.on(signal, () => shutdown(signal));
   });
 }
 

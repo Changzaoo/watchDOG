@@ -30,8 +30,8 @@ const LAYER_DEFINITIONS: LayerDefinition[] = [
   },
   {
     name: 'Secrets / Credenciais',
-    criticalRuleIds: ['SECRET_001', 'SECRET_002', 'SECRET_003', 'SECRET_004', 'SECRET_005', 'SECRET_006', 'SECRET_007', 'SECRET_009', 'SECRET_011', 'SECRET_012', 'SUPA_001', 'FIRE_001', 'FIRE_002'],
-    warningRuleIds: ['SECRET_008', 'SECRET_010'],
+    criticalRuleIds: ['SECRET_001', 'SECRET_002', 'SECRET_003', 'SECRET_004', 'SECRET_005', 'SECRET_006', 'SECRET_007', 'SECRET_009', 'SECRET_011', 'SECRET_012', 'SECRET_013', 'SECRET_014', 'SECRET_015', 'SECRET_017', 'SECRET_018', 'SECRET_019', 'SECRET_020', 'SUPA_001', 'FIRE_001', 'FIRE_002'],
+    warningRuleIds: ['SECRET_008', 'SECRET_010', 'SECRET_016'],
   },
   {
     name: 'Headers HTTP',
@@ -55,8 +55,8 @@ const LAYER_DEFINITIONS: LayerDefinition[] = [
   },
   {
     name: 'Docker / Infra',
-    criticalRuleIds: ['DOCKER_004', 'DOCKER_005', 'DOCKER_008'],
-    warningRuleIds: ['DOCKER_001', 'DOCKER_002', 'DOCKER_003', 'DOCKER_006', 'DOCKER_007'],
+    criticalRuleIds: ['DOCKER_004', 'DOCKER_005', 'DOCKER_008', 'DOCKER_011'],
+    warningRuleIds: ['DOCKER_001', 'DOCKER_002', 'DOCKER_003', 'DOCKER_006', 'DOCKER_007', 'DOCKER_010', 'DOCKER_012', 'DOCKER_013'],
   },
   {
     name: 'CI/CD',
@@ -70,19 +70,54 @@ const LAYER_DEFINITIONS: LayerDefinition[] = [
   },
   {
     name: 'Privacidade / LGPD',
-    criticalRuleIds: [],
-    warningRuleIds: ['PRIV_001', 'PRIV_002', 'PRIV_003', 'PRIV_004', 'PRIV_005'],
+    criticalRuleIds: ['PRIVACY_010'],
+    warningRuleIds: ['PRIV_001', 'PRIV_002', 'PRIV_003', 'PRIV_004', 'PRIV_005', 'PRIVACY_011', 'PRIVACY_012', 'PRIVACY_013'],
   },
   {
     name: 'Web3 / Contratos',
-    criticalRuleIds: ['WEB3_001', 'WEB3_002', 'WEB3_003', 'WEB3_004'],
-    warningRuleIds: ['WEB3_005', 'WEB3_006', 'WEB3_007'],
+    criticalRuleIds: ['WEB3_001', 'WEB3_002', 'WEB3_003', 'WEB3_004', 'WEB3_012', 'WEB3_015'],
+    warningRuleIds: ['WEB3_005', 'WEB3_006', 'WEB3_007', 'WEB3_010', 'WEB3_011', 'WEB3_013', 'WEB3_014'],
     techRequired: ['ethers.js', 'web3.js', 'wagmi', 'Hardhat', 'Foundry', 'Truffle'],
   },
   {
     name: 'Dependências',
     criticalRuleIds: [],
     warningRuleIds: ['DEP_001'],
+  },
+  {
+    name: 'Injeção & Execução',
+    criticalRuleIds: ['INJ_001', 'INJ_002', 'INJ_003', 'INJ_004', 'INJ_005', 'INJ_009', 'INJ_010', 'INJ_011', 'INJ_015', 'INJ_016', 'SSRF_001'],
+    warningRuleIds: ['INJ_006', 'INJ_007', 'INJ_008', 'INJ_012', 'INJ_013', 'INJ_014', 'RED_001'],
+  },
+  {
+    name: 'DoS & Resiliência',
+    criticalRuleIds: [],
+    warningRuleIds: ['DOS_001', 'DOS_002', 'DOS_003', 'DOS_004', 'DOS_005', 'DOS_006', 'DOS_007', 'DOS_008', 'DOS_009', 'DOS_010', 'DOS_011', 'DOS_012', 'DOS_013', 'DOS_014'],
+  },
+  {
+    name: 'JWT & Tokens',
+    criticalRuleIds: ['JWT_001', 'JWT_002', 'JWT_004'],
+    warningRuleIds: ['JWT_003', 'JWT_005', 'JWT_006'],
+  },
+  {
+    name: 'API & Autorização (BOLA/Mass Assignment/OAuth)',
+    criticalRuleIds: [],
+    warningRuleIds: ['AUTHZ_010', 'AUTHZ_011', 'AUTHZ_012', 'MASS_001', 'OAUTH_001', 'OAUTH_002', 'OAUTH_003', 'CSRF_001', 'CSRF_002', 'COOKIE_C01'],
+  },
+  {
+    name: 'Supply Chain',
+    criticalRuleIds: ['SUPPLY_001', 'SUPPLY_002', 'SUPPLY_006', 'SUPPLY_010'],
+    warningRuleIds: ['SUPPLY_003', 'SUPPLY_004', 'SUPPLY_005', 'SUPPLY_007', 'SUPPLY_008', 'SUPPLY_009'],
+  },
+  {
+    name: 'IaC & Kubernetes',
+    criticalRuleIds: ['IAC_001', 'IAC_002', 'CLOUD_001', 'K8S_001', 'K8S_006'],
+    warningRuleIds: ['IAC_003', 'K8S_002', 'K8S_003', 'K8S_004', 'K8S_005', 'CICD_015'],
+  },
+  {
+    name: 'LLM / IA',
+    criticalRuleIds: ['LLM_002', 'LLM_003', 'LLM_004'],
+    warningRuleIds: ['LLM_001', 'LLM_005', 'LLM_006', 'AI_001'],
   },
 ];
 

@@ -2,6 +2,7 @@ import { Finding, ScanLog, TechStack } from '@sentinelscope/shared';
 import { UrlScanOptions, ScanResultRaw } from '../types';
 import { safeGet, checkPath } from '../utils/safeHttpClient';
 import { headersRules } from '../rules/headers.rules';
+import { dosHeadersRules } from '../rules/dosHeaders.rules';
 
 const SAFE_PATHS_TO_CHECK = [
   '/robots.txt',
@@ -20,6 +21,13 @@ const SAFE_PATHS_TO_CHECK = [
   '/phpinfo.php',
   '/wp-login.php',
   '/wp-admin',
+];
+
+// Paths adicionais de exposição/reconhecimento sondados em depth normal/deep.
+const EXTRA_PATHS_TO_CHECK = [
+  '/.git/HEAD',
+  '/actuator/health',
+  '/.well-known/openid-configuration',
 ];
 
 const STEPS = [
@@ -57,7 +65,8 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
     remediation: string,
     evidence?: string,
     safeExample?: string,
-    reference?: string
+    reference?: string,
+    confidence: Finding['confidence'] = 'medium'
   ) {
     findings.push({
       scanId,
@@ -72,7 +81,7 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
       remediation,
       safeExample,
       reference,
-      confidence: 'medium',
+      confidence,
       status: 'open',
       occurrences: 1,
     });
@@ -132,7 +141,28 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
 
   const headers = mainResponse.headers;
 
-  for (const rule of headersRules) {
+  // Garante que set-cookie seja uma string única (algumas libs HTTP retornam
+  // array de cookies). Reconstrói com '\n' entre cookies para que as regras
+  // COOKIE_* consigam inspecionar cada diretiva. safeGet já une com ', ',
+  // então normalizamos esses separadores para '\n'.
+  if (headers['set-cookie'] && headers['set-cookie'].includes(', ')) {
+    headers['set-cookie'] = headers['set-cookie']
+      .split(/,\s*(?=[A-Za-z0-9_.-]+=)/)
+      .join('\n');
+  }
+
+  // Mapeia uma confiança coerente por regra HTTP: regras que apenas detectam
+  // ausência de header têm confiança alta; heurísticas de postura (WAF/CDN,
+  // rate-limit) são informativas e usam confiança baixa.
+  function confidenceForHttpRule(ruleId: string): Finding['confidence'] {
+    if (ruleId.startsWith('DOSH_')) return 'low';
+    if (ruleId.startsWith('COOKIE_') || ruleId.startsWith('CORS_')) return 'high';
+    return 'medium';
+  }
+
+  // Regras de headers de segurança (presença/qualidade de CSP, HSTS, cookies,
+  // COOP/CORP, CORS, cache) e regras de postura DDoS/WAF/CDN/rate-limit.
+  for (const rule of [...headersRules, ...dosHeadersRules]) {
     if (rule.check(headers, mainResponse.body)) {
       addFinding(
         rule.id,
@@ -144,7 +174,8 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
         rule.remediation,
         headers[rule.id.toLowerCase()] || undefined,
         rule.safeExample,
-        rule.reference
+        rule.reference,
+        confidenceForHttpRule(rule.id)
       );
     }
   }
@@ -208,7 +239,9 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
   progress(STEPS[3].label, STEPS[3].progress);
   log('info', STEPS[3].label);
 
-  const pathsToCheck = depth === 'quick' ? SAFE_PATHS_TO_CHECK.slice(0, 5) : SAFE_PATHS_TO_CHECK;
+  const pathsToCheck = depth === 'quick'
+    ? SAFE_PATHS_TO_CHECK.slice(0, 5)
+    : [...SAFE_PATHS_TO_CHECK, ...EXTRA_PATHS_TO_CHECK];
 
   for (const checkPathStr of pathsToCheck) {
     const resp = await checkPath(url, checkPathStr);
@@ -275,6 +308,85 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
           'OWASP A01:2021'
         );
       }
+
+      if (checkPathStr === '/.git/HEAD' && /ref:\s|^[0-9a-f]{40}/m.test(resp.body)) {
+        addFinding(
+          'EXPOSE_001', 'Diretório .git exposto publicamente', 'Exposição', 'high',
+          'O arquivo /.git/HEAD está acessível, indicando que o diretório .git foi publicado junto com a aplicação.',
+          'Atacantes podem reconstruir todo o histórico do repositório (código-fonte, secrets commitados, credenciais) baixando os objetos do .git.',
+          'Bloqueie o acesso a /.git no servidor web (deny all em /.git/) e nunca faça deploy do diretório de versionamento.',
+          `${url}/.git/HEAD`,
+          'location /.git { deny all; return 404; }',
+          'OWASP A05:2021 - Security Misconfiguration',
+          'high'
+        );
+      }
+
+      if (checkPathStr === '/actuator/health') {
+        addFinding(
+          'EXPOSE_002', 'Spring Boot Actuator exposto', 'Exposição', 'medium',
+          'O endpoint /actuator/health respondeu 200, indicando endpoints de gestão Spring Boot Actuator acessíveis.',
+          'Endpoints Actuator podem vazar variáveis de ambiente (/actuator/env), heap dumps e métricas internas, facilitando reconhecimento e exposição de secrets.',
+          'Restrinja os endpoints Actuator a uma porta de gestão interna e exija autenticação (management.endpoints.web.exposure.include mínimo).',
+          `${url}/actuator/health`,
+          'management.endpoints.web.exposure.include=health',
+          'OWASP A05:2021 - Security Misconfiguration'
+        );
+      }
+
+      if (checkPathStr === '/.well-known/openid-configuration') {
+        addFinding(
+          'EXPOSE_003', 'Metadados OpenID Connect públicos', 'Exposição', 'info',
+          'O documento de descoberta OpenID Connect está publicamente acessível, expondo endpoints de autorização, token, JWKS e escopos suportados.',
+          'Expor a configuração do provedor de identidade é normal para OIDC, mas revela superfície de ataque (endpoints, algoritmos aceitos) útil em reconhecimento.',
+          'Mantenha apenas os endpoints necessários expostos e garanta que algoritmos fracos (ex.: none, HS256 com segredo compartilhado) não estejam habilitados.',
+          `${url}/.well-known/openid-configuration`,
+          undefined,
+          'OWASP A07:2021 - Identification and Authentication Failures',
+          'high'
+        );
+      }
+    }
+  }
+
+  // GraphQL introspection probe (leve): envia uma query mínima e, se o endpoint
+  // responder com o schema, sinaliza introspection habilitada (cruza AUTHZ_003).
+  if (depth !== 'quick') {
+    // safeGet só executa GET; usamos GraphQL-over-GET (suportado pela maioria
+    // dos servidores) passando a query mínima via query-string.
+    const introspectionQuery = '{__typename __schema{queryType{name}}}';
+    const graphqlUrl =
+      url.replace(/\/$/, '') + '/graphql?query=' + encodeURIComponent(introspectionQuery);
+    const gqlResp = await safeGet(graphqlUrl, {
+      ...customHeaders,
+      'Accept': 'application/json',
+    });
+
+    if (
+      gqlResp.statusCode === 200 &&
+      /"__schema"\s*:/.test(gqlResp.body) &&
+      /"queryType"/.test(gqlResp.body)
+    ) {
+      addFinding(
+        'AUTHZ_003', 'GraphQL introspection habilitada em produção', 'API', 'medium',
+        'O endpoint /graphql respondeu a uma query de introspection (__schema), expondo o schema completo da API.',
+        'Introspection habilitada permite que atacantes enumerem todos os tipos, queries e mutations, acelerando a descoberta de operações sensíveis e dados expostos.',
+        'Desabilite introspection em produção (introspection: false) e restrinja o GraphiQL/playground a ambientes de desenvolvimento.',
+        `${graphqlUrl} respondeu __schema/queryType`,
+        'new ApolloServer({ introspection: process.env.NODE_ENV !== "production" })',
+        'OWASP API9:2023 - Improper Inventory Management',
+        'high'
+      );
+    } else if (gqlResp.statusCode === 200 && /"data"\s*:/.test(gqlResp.body)) {
+      addFinding(
+        'API_002', 'GraphQL endpoint público', 'API', 'medium',
+        'Endpoint GraphQL acessível e respondendo a queries sem autenticação.',
+        'Endpoint GraphQL aberto amplia a superfície de ataque e pode permitir abuso de queries pesadas (DoS) ou acesso a dados não autorizados.',
+        'Exija autenticação no endpoint GraphQL, aplique limites de profundidade/complexidade de query e rate limiting.',
+        `${graphqlUrl}`,
+        undefined,
+        'OWASP API9:2023 - Improper Inventory Management'
+      );
     }
   }
 

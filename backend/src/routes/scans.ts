@@ -428,32 +428,48 @@ async function runLocalScan(scanId: string, projectPath: string) {
     const summary = buildSummary(severities);
     const score = calculateScore(summary);
 
-    // Save findings (batch for performance)
-    for (const finding of findingsToSave) {
-      await prisma.finding.create({
+    // Gravação em lote dos findings + atualização do scan em UMA única transação.
+    // createMany em chunks de 200 evita estourar o limite de variáveis do SQLite
+    // (~999 por statement) e troca N transações implícitas por 1, reduzindo o
+    // tempo de gravação e o lock de escrita do SQLite (single-writer).
+    const findingRows = findingsToSave.map(finding => ({
+      scanId,
+      ruleId: finding.ruleId,
+      title: finding.title,
+      severity: finding.severity,
+      category: finding.category,
+      confidence: finding.confidence || 'medium',
+      filePath: finding.filePath,
+      line: finding.line,
+      evidenceMasked: finding.evidenceMasked,
+      description: finding.description,
+      impact: finding.impact,
+      attackScenarioDefensive: finding.attackScenarioDefensive,
+      remediation: finding.remediation,
+      safeExample: finding.safeExample,
+      fixPrompt: finding.fixPrompt,
+      testSuggestion: finding.testSuggestion,
+      reference: finding.reference,
+      status: finding.status,
+      occurrences: finding.occurrences || 1,
+    }));
+
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < findingRows.length; i += 200) {
+        await tx.finding.createMany({ data: findingRows.slice(i, i + 200) });
+      }
+      await tx.scan.update({
+        where: { id: scanId },
         data: {
-          scanId,
-          ruleId: finding.ruleId,
-          title: finding.title,
-          severity: finding.severity,
-          category: finding.category,
-          confidence: finding.confidence || 'medium',
-          filePath: finding.filePath,
-          line: finding.line,
-          evidenceMasked: finding.evidenceMasked,
-          description: finding.description,
-          impact: finding.impact,
-          attackScenarioDefensive: finding.attackScenarioDefensive,
-          remediation: finding.remediation,
-          safeExample: finding.safeExample,
-          fixPrompt: finding.fixPrompt,
-          testSuggestion: finding.testSuggestion,
-          reference: finding.reference,
-          status: finding.status,
-          occurrences: finding.occurrences || 1,
+          status: 'completed',
+          score,
+          finishedAt: new Date(),
+          durationMs: Date.now() - startTime,
+          techStack: JSON.stringify(result.techStack),
+          summary: JSON.stringify(summary),
         },
       });
-    }
+    });
 
     // Save logs
     for (const log of result.logs.slice(-200)) {
@@ -526,30 +542,33 @@ async function runUrlScan(scanId: string, url: string, depth: 'quick' | 'normal'
     const summary = buildSummary(severities);
     const score = calculateScore(summary);
 
-    for (const finding of findingsToSave) {
-      await prisma.finding.create({
-        data: {
-          scanId,
-          ruleId: finding.ruleId,
-          title: finding.title,
-          severity: finding.severity,
-          category: finding.category,
-          confidence: finding.confidence || 'high',
-          url: finding.url,
-          evidenceMasked: finding.evidenceMasked,
-          description: finding.description,
-          impact: finding.impact,
-          attackScenarioDefensive: finding.attackScenarioDefensive,
-          remediation: finding.remediation,
-          safeExample: finding.safeExample,
-          fixPrompt: finding.fixPrompt,
-          testSuggestion: finding.testSuggestion,
-          reference: finding.reference,
-          status: finding.status,
-          occurrences: finding.occurrences || 1,
-        },
-      });
-    }
+    // Gravação em lote dos findings de URL: 1 transação + createMany em chunks de 200.
+    const findingRows = findingsToSave.map(finding => ({
+      scanId,
+      ruleId: finding.ruleId,
+      title: finding.title,
+      severity: finding.severity,
+      category: finding.category,
+      confidence: finding.confidence || 'high',
+      url: finding.url,
+      evidenceMasked: finding.evidenceMasked,
+      description: finding.description,
+      impact: finding.impact,
+      attackScenarioDefensive: finding.attackScenarioDefensive,
+      remediation: finding.remediation,
+      safeExample: finding.safeExample,
+      fixPrompt: finding.fixPrompt,
+      testSuggestion: finding.testSuggestion,
+      reference: finding.reference,
+      status: finding.status,
+      occurrences: finding.occurrences || 1,
+    }));
+
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < findingRows.length; i += 200) {
+        await tx.finding.createMany({ data: findingRows.slice(i, i + 200) });
+      }
+    });
 
     for (const log of result.logs.slice(-200)) {
       await prisma.scanLog.create({ data: { scanId, level: log.level, message: log.message } });

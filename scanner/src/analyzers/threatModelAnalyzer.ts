@@ -34,6 +34,12 @@ const ATTACK_SURFACES: Array<{ condition: (f: Finding[], t: TechStack[]) => bool
   { condition: (_, t) => t.some(x => x.name.includes('GitHub Actions')), surface: 'Pipeline de CI/CD (GitHub Actions)' },
   { condition: (_, t) => t.some(x => x.category === 'web3'), surface: 'Smart contracts e transações blockchain' },
   { condition: (f) => f.some(x => x.ruleId.startsWith('SUPA_') || x.ruleId.startsWith('FIRE_')), surface: 'Banco de dados em nuvem (Supabase/Firebase) acessível pelo cliente' },
+  { condition: (f) => f.some(x => x.ruleId.startsWith('INJ_') || x.ruleId.startsWith('SSRF_')), surface: 'Pontos de injeção (SQL/NoSQL/comando/SSTI/XXE) e SSRF server-side' },
+  { condition: (f) => f.some(x => x.ruleId.startsWith('DOS_')), surface: 'Disponibilidade do serviço (DoS de camada de aplicação, ReDoS, falta de rate limiting)' },
+  { condition: (f) => f.some(x => x.ruleId.startsWith('JWT_')), surface: 'Tokens de sessão / JWT (algorithm confusion, segredo fraco)' },
+  { condition: (f) => f.some(x => x.ruleId.startsWith('SUPPLY_')), surface: 'Cadeia de suprimentos (dependências, scripts de install, lockfiles)' },
+  { condition: (f) => f.some(x => x.ruleId.startsWith('IAC_') || x.ruleId.startsWith('K8S_') || x.ruleId.startsWith('CLOUD_')), surface: 'Infraestrutura como código (Terraform, Kubernetes) e configuração de nuvem' },
+  { condition: (f) => f.some(x => x.ruleId.startsWith('LLM_') || x.ruleId.startsWith('AI_')), surface: 'Integração com LLM/IA (prompt injection, saída insegura, chaves expostas)' },
   { condition: () => true, surface: 'Frontend público (XSS, CSRF, clickjacking)' },
   { condition: () => true, surface: 'Variáveis de ambiente e gestão de secrets' },
 ];

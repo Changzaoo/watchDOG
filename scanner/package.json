@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+    "test": "tsc && node --test test/rules.test.cjs"
   },
   "dependencies": {
     "@sentinelscope/shared": "*"

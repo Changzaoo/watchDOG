@@ -16,6 +16,13 @@ export interface FileRule {
   patterns: RegExp[];
   fileExtensions?: string[];
   fileNamePatterns?: RegExp[];
+  requireContent?: RegExp;
+  /**
+   * Gate cross-file: se QUALQUER arquivo do projeto casar este padrão, a regra inteira
+   * é suprimida no scan. Usado por regras de postura (ex.: "Express sem rate limiting")
+   * para não disparar falso-positivo quando a proteção existe em outro arquivo.
+   */
+  suppressIfProjectMatches?: RegExp;
 }
 
 export interface HttpRule {
@@ -72,6 +79,8 @@ export interface FileWalkResult {
   path: string;
   content: string;
   size: number;
+  ext?: string;
+  normPath?: string;
 }
 
 export interface DependencyIssue {
