@@ -60,7 +60,7 @@ async function fetchJson<T>(url: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(BASE + url, {
     ...opts,
     headers: buildHeaders(opts?.headers, true),
-    credentials: 'same-origin',
+    credentials: 'include',
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
@@ -77,7 +77,7 @@ function getFilenameFromDisposition(disposition: string | null, fallback: string
 async function downloadFromApi(url: string, fallbackFilename: string): Promise<void> {
   const res = await fetch(url, {
     headers: buildHeaders(),
-    credentials: 'same-origin',
+    credentials: 'include',
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
@@ -121,7 +121,7 @@ function listenWithFetchSse(url: string, onEvent: (event: any) => void): ScanEve
 
   fetch(url, {
     headers: buildHeaders(),
-    credentials: 'same-origin',
+    credentials: 'include',
     signal: controller.signal,
   }).then(async (res) => {
     if (!res.ok || !res.body) return;
