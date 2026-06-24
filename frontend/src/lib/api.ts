@@ -120,7 +120,7 @@ function listenWithFetchSse(url: string, onEvent: (event: any) => void): ScanEve
   const controller = new AbortController();
 
   fetch(url, {
-    headers: buildHeaders(),
+    headers: buildHeaders({ Accept: 'text/event-stream' }),
     credentials: 'include',
     signal: controller.signal,
   }).then(async (res) => {

@@ -92,6 +92,16 @@ app.use(compression({
     if (typeof accept === 'string' && accept.includes('text/event-stream')) {
       return false;
     }
+    // Também desliga pela rota/Content-Type da resposta: o cliente SSE usa fetch
+    // (sem Accept: text/event-stream), então é preciso detectar o stream aqui
+    // para não bufferizar os eventos e estourar timeout no proxy (Cloudflare 524).
+    if (req.path.startsWith('/api/events/')) {
+      return false;
+    }
+    const contentType = res.getHeader('Content-Type');
+    if (typeof contentType === 'string' && contentType.includes('text/event-stream')) {
+      return false;
+    }
     return compression.filter(req, res);
   },
 }));
