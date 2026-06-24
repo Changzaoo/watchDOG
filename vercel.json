@@ -109,11 +109,11 @@
     },
     {
       "source": "/api/:path*",
-      "destination": "https://watchdog-api-migrated-624519.onrender.com/api/:path*"
+      "destination": "https://watchdog-api.nexusholding.xyz/api/:path*"
     },
     {
       "source": "/health",
-      "destination": "https://watchdog-api-migrated-624519.onrender.com/health"
+      "destination": "https://watchdog-api.nexusholding.xyz/health"
     },
     {
       "source": "/(.*)",
