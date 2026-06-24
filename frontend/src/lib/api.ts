@@ -1,7 +1,9 @@
 import { Scan, Finding, ScanLog, ThreatModelData, DefenseLayerData } from '@sentinelscope/shared';
 
-const BASE = '/api';
-const HEALTH_URL = '/health';
+const __wdEnv = ((import.meta as any).env) || {};
+const API_ROOT = (__wdEnv.VITE_API_URL || '');
+const BASE = API_ROOT ? (API_ROOT + '/api') : '/api';
+const HEALTH_URL = API_ROOT ? (API_ROOT + '/health') : '/health';
 const NGROK_SKIP_WARNING_HEADER = 'ngrok-skip-browser-warning';
 
 export interface BackendHealth {
