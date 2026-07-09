@@ -30,7 +30,7 @@ watchDOG é uma ferramenta de auditoria de segurança defensiva que analisa:
 - **Threat model**: ativos, perfis de atacante, superfícies de ataque e lacunas de controle
 - **Defense depth**: leitura por camadas defensivas para priorizar correções
 
-### Categorias de análise (240+ regras):
+### Categorias de análise (248+ regras):
 - 🔐 Secrets e credenciais hardcoded (AWS/GCP/Azure, OpenAI/Anthropic, GitHub/GitLab, Stripe, chaves PEM, connection strings)
 - 📦 Dependências vulneráveis (CVEs 2026) e **supply chain** (typosquatting, postinstall malicioso, lockfile tampering, IOCs de worms)
 - 💉 **Injeção e execução** (SQLi, NoSQLi, Command Injection, SSTI, XXE, prototype pollution, desserialização insegura, path traversal, open redirect)
@@ -41,7 +41,9 @@ watchDOG é uma ferramenta de auditoria de segurança defensiva que analisa:
 - 🍪 Cookies e **headers** de segurança (CSP fraco, HSTS quality, COOP/COEP/CORP, SameSite, WAF/CDN, rate-limit headers)
 - 🔄 Configuração de CORS
 - 🐳 Docker, **Kubernetes**, **Terraform/IaC** e **CI/CD** (GitHub Actions: script injection, pull_request_target, actions não fixadas)
-- 🤖 **LLM/IA** (prompt injection, saída insegura, chaves de IA no client-side, excessive agency)
+- 🤖 **LLM/IA** (prompt injection direta/indireta, saída insegura, chaves de IA no client-side, excessive agency, **segredo embutido no system prompt**, **injeção multimodal via imagem/OCR**)
+- 💳 **Webhook/Pagamento** (webhook sem verificação de assinatura, acesso liberado por `status:approved` do corpo, integrações legadas/redundantes, replay/idempotência) — **bypass de assinatura de pagamento**
+- 🖥️ **Autorização client-side** (permissão/plano em localStorage, paywall só por blur/CSS, dado premium entregue ao cliente)
 - 🗄️ Banco de dados
 - ⛓️ Web3 (reentrancy, tx.origin, selfdestruct, delegatecall, aleatoriedade insegura)
 - 📝 Logs com dados sensíveis
@@ -186,7 +188,7 @@ sentinelscope/
 ├── shared/          # Tipos TypeScript compartilhados
 ├── scanner/         # Engine de análise
 │   └── src/
-│       ├── rules/   # 214 regras de código + 22 regras HTTP (240+ no total)
+│       ├── rules/   # 226 regras de código + 22 regras HTTP (248+ no total)
 │       ├── analyzers/  # Analisadores de projeto, URL, dependências
 │       └── utils/   # Utilitários (mascaramento, severity, HTTP)
 ├── backend/         # API Express + SQLite + SSE

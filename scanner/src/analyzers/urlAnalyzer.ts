@@ -30,6 +30,23 @@ const EXTRA_PATHS_TO_CHECK = [
   '/.well-known/openid-configuration',
 ];
 
+// Caminhos comuns de webhook de pagamento. Sondados APENAS com GET (passivo,
+// sem enviar nenhum payload de evento). O objetivo é puramente defensivo:
+// alertar o dono de que o endpoint é descobrível — como no vídeo, em que o
+// atacante achou o webhook por fuzzing — para que ele garanta verificação de
+// assinatura. O watchDOG NUNCA envia um POST de "pagamento aprovado".
+const WEBHOOK_PATHS_TO_CHECK = [
+  '/api/webhook',
+  '/api/webhooks',
+  '/webhook',
+  '/webhooks',
+  '/api/webhook/stripe',
+  '/api/webhook/kirvano',
+  '/api/webhook/cacto',
+  '/api/payment/webhook',
+  '/api/billing/webhook',
+];
+
 const STEPS = [
   { label: 'Verificando conectividade e HTTPS', progress: 10 },
   { label: 'Analisando headers de segurança', progress: 30 },
@@ -386,6 +403,42 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
           'OWASP A07:2021 - Identification and Authentication Failures',
           'high'
         );
+      }
+    }
+  }
+
+  // Sondagem passiva de webhooks de pagamento (apenas GET, sem payload).
+  // Se um caminho de webhook responde a GET com algo diferente de 404 (ex.: 405
+  // Method Not Allowed, 400, 401), o endpoint existe e é descobrível — o mesmo
+  // ponto que o atacante do vídeo achou por fuzzing. Alertamos de forma
+  // defensiva para o dono garantir verificação de assinatura no handler.
+  if (depth !== 'quick') {
+    let webhookBlocks = 0;
+    for (const whPath of WEBHOOK_PATHS_TO_CHECK) {
+      const resp = await checkPath(url, whPath);
+
+      if (resp.error || [429, 503].includes(resp.statusCode)) {
+        webhookBlocks++;
+        if (webhookBlocks >= 3) break; // recua para não sobrecarregar o alvo
+        continue;
+      }
+      webhookBlocks = 0;
+
+      // 404/403 => rota não exposta a GET; qualquer outro status "vivo" indica
+      // que o endpoint de webhook existe.
+      if ([200, 400, 401, 405, 415, 422, 500].includes(resp.statusCode)) {
+        addFinding(
+          'WHOOK_007', 'Endpoint de webhook de pagamento descobrível', 'Webhook/Pagamento', 'medium',
+          `O caminho ${whPath} respondeu HTTP ${resp.statusCode} a uma requisição GET, indicando que existe um endpoint de webhook publicamente descobrível (sem enviar nenhum evento de pagamento).`,
+          'Webhooks de pagamento são o alvo clássico de bypass de assinatura: se o handler não validar a assinatura do provedor, um evento forjado de "pagamento aprovado" pode liberar acesso pago. No vídeo, o webhook foi achado exatamente assim, por fuzzing.',
+          'Garanta que o handler valide a assinatura do provedor (HMAC/constructEvent) em tempo constante e confirme a transação na API oficial antes de conceder qualquer acesso. Considere um caminho de webhook não previsível e restrição por IP do provedor. Remova endpoints de webhook legados/redundantes.',
+          `${url}${whPath} -> HTTP ${resp.statusCode}`,
+          "// event = stripe.webhooks.constructEvent(rawBody, sig, WEBHOOK_SECRET)\n// -> valida assinatura ANTES de processar o evento",
+          'OWASP API2:2023 - Broken Authentication; CWE-345',
+          'low'
+        );
+        // Um endpoint confirmado já basta para o alerta; evita ruído/varredura.
+        break;
       }
     }
   }

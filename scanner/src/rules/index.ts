@@ -29,6 +29,9 @@ import { iacRules } from './iac.rules';
 import { k8sRules } from './k8s.rules';
 import { llmRules } from './llm.rules';
 import { dosHeadersRules } from './dosHeaders.rules';
+// Cadeia de ataque do vídeo "Hackeei uma IA" (webhook de pagamento + client-side)
+import { webhookRules } from './webhook.rules';
+import { clientSideRules } from './clientside.rules';
 
 export {
   apiRules,
@@ -60,6 +63,8 @@ export {
   k8sRules,
   llmRules,
   dosHeadersRules,
+  webhookRules,
+  clientSideRules,
 };
 
 export const allFileRules: FileRule[] = [
@@ -91,6 +96,8 @@ export const allFileRules: FileRule[] = [
   ...iacRules,
   ...k8sRules,
   ...llmRules,
+  ...webhookRules,
+  ...clientSideRules,
 ];
 
 // Regras HTTP usadas pelo URL analyzer (headers + WAF/CDN/rate-limit)
