@@ -43,6 +43,7 @@ if (isPublicBackend) {
 
 const defaultCorsOrigins = [
   'https://watchdog-chi.vercel.app',
+  'https://watchdog.nexusholding.xyz',
 ];
 const localCorsOrigins = [
   'http://localhost:5173',
@@ -51,9 +52,15 @@ const localCorsOrigins = [
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
 ];
-const defaultCorsOriginPatterns = isPublicBackend ? [] : [
-  /^https:\/\/watchdog-[a-z0-9-]+-changzaoos-projects\.vercel\.app$/i,
-];
+const defaultCorsOriginPatterns = isPublicBackend
+  ? [
+      // Domínio próprio (frontend em watchdog.nexusholding.xyz e afins).
+      /^https:\/\/([a-z0-9-]+\.)*nexusholding\.xyz$/i,
+    ]
+  : [
+      /^https:\/\/watchdog-[a-z0-9-]+-changzaoos-projects\.vercel\.app$/i,
+      /^https:\/\/([a-z0-9-]+\.)*nexusholding\.xyz$/i,
+    ];
 const configuredCorsOrigins = (process.env.CORS_ORIGINS || '')
   .split(',')
   .map(origin => origin.trim())
