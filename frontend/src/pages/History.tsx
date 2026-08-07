@@ -24,7 +24,7 @@ export function History() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="mobile-page-title flex items-center gap-3">
-            <HistoryIcon className="h-6 w-6 text-brand sm:h-7 sm:w-7" />
+            <HistoryIcon className="h-6 w-6 text-violet-400 sm:h-7 sm:w-7" />
             Histórico de Scans
           </h1>
           <p className="text-gray-500 text-sm mt-1">{visibleScans.length} scans realizados</p>
@@ -56,8 +56,8 @@ export function History() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start gap-2">
                     {scan.type === 'url'
-                      ? <Globe className="w-4 h-4 text-brand-400 flex-shrink-0" />
-                      : <FolderOpen className="w-4 h-4 text-brand flex-shrink-0" />}
+                      ? <Globe className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                      : <FolderOpen className="w-4 h-4 text-violet-400 flex-shrink-0" />}
                     <span className="min-w-0 flex-1 truncate font-semibold text-gray-200">{scan.projectName}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ml-auto flex-shrink-0 ${
                       scan.status === 'completed' ? 'bg-green-900/30 text-green-400' :

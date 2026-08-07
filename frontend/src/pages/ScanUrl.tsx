@@ -55,7 +55,7 @@ export function ScanUrl() {
         </button>
         <div className="min-w-0">
           <h1 className="mobile-section-title flex items-center gap-2">
-            <Globe className="h-5 w-5 flex-shrink-0 text-brand-400" />
+            <Globe className="h-5 w-5 flex-shrink-0 text-cyan-400" />
             Analise de URL Online
           </h1>
           <p className="text-gray-500 text-sm">Analise passiva e defensiva de aplicacao online</p>
@@ -113,7 +113,7 @@ export function ScanUrl() {
                 onClick={() => setDepth(d.value as any)}
                 className={`touch-row rounded-lg border p-3 text-left transition-all ${
                   depth === d.value
-                    ? 'border-brand bg-brand/30 text-brand'
+                    ? 'border-violet-600 bg-violet-900/30 text-violet-300'
                     : 'border-dark-800 bg-dark-800 text-gray-400 hover:border-dark-700'
                 }`}
               >

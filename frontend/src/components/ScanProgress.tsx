@@ -13,14 +13,14 @@ export function ScanProgress({ step, progress }: Props) {
         <div className="relative">
           <AppLogo className="w-9 h-9 rounded-lg bg-dark-900/60 ring-1 ring-blue-500/30" />
           <div className="absolute -top-1 -right-1">
-            <Loader2 className="w-4 h-4 text-brand-400 animate-spin" />
+            <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
           </div>
         </div>
         <div className="min-w-0">
           <div className="font-semibold text-gray-200">Escaneando...</div>
           <div className="break-words text-sm text-gray-400">{step}</div>
         </div>
-        <div className="ml-auto flex-shrink-0 text-xl font-bold text-brand sm:text-2xl">{progress}%</div>
+        <div className="ml-auto flex-shrink-0 text-xl font-bold text-violet-400 sm:text-2xl">{progress}%</div>
       </div>
 
       <div className="progress-bar">
@@ -35,7 +35,7 @@ export function ScanProgress({ step, progress }: Props) {
           <div
             key={i}
             className={`h-1 rounded-full transition-all duration-300 ${
-              (i / 12) * 100 <= progress ? 'bg-brand' : 'bg-dark-800'
+              (i / 12) * 100 <= progress ? 'bg-violet-500' : 'bg-dark-800'
             }`}
           />
         ))}

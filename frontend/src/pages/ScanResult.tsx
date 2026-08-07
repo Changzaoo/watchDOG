@@ -149,8 +149,8 @@ export function ScanResult() {
           <div className="min-w-0">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               {currentScan.type === 'url'
-                ? <Globe className="h-5 w-5 flex-shrink-0 text-brand-400" />
-                : <FolderOpen className="h-5 w-5 flex-shrink-0 text-brand" />}
+                ? <Globe className="h-5 w-5 flex-shrink-0 text-cyan-400" />
+                : <FolderOpen className="h-5 w-5 flex-shrink-0 text-violet-400" />}
               <h1 className="min-w-0 truncate mobile-section-title">{currentScan.projectName}</h1>
               <span className={`text-xs px-2 py-0.5 rounded-full ${
                 currentScan.status === 'completed' ? 'bg-green-900/30 text-green-400' :
@@ -235,7 +235,7 @@ export function ScanResult() {
           {/* Filters */}
           <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[auto_minmax(14rem,20rem)_repeat(3,auto)] lg:items-center">
             <div className="flex items-center gap-2 text-sm font-semibold text-gray-300">
-              <Filter className="w-4 h-4 text-brand" />
+              <Filter className="w-4 h-4 text-violet-400" />
               {filtered.length} achados
             </div>
             <div className="relative min-w-0">

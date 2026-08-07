@@ -42,7 +42,7 @@ export function ThreatModelPanel({ model }: Props) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
-        <ListBlock title="Ativos Críticos" icon={Database} items={model.assets} accent="text-brand-400" />
+        <ListBlock title="Ativos Críticos" icon={Database} items={model.assets} accent="text-cyan-400" />
         <ListBlock title="Perfis de Atacante" icon={Users} items={model.attackers} accent="text-orange-400" />
         <ListBlock title="Superfícies de Ataque" icon={Crosshair} items={model.attackSurfaces} accent="text-red-400" />
         <ListBlock title="Controles Esperados" icon={CheckCircle2} items={model.controls} accent="text-green-400" />
@@ -60,7 +60,7 @@ export function ThreatModelPanel({ model }: Props) {
             {model.gaps.map(gap => (
               <div key={`${gap.ruleId}-${gap.title}`} className="rounded-lg border border-dark-800 bg-dark-900/60 p-3">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-mono text-brand bg-brand/30 px-2 py-0.5 rounded">
+                  <span className="text-xs font-mono text-violet-300 bg-violet-900/30 px-2 py-0.5 rounded">
                     {gap.ruleId}
                   </span>
                   <span className="min-w-0 text-sm font-medium text-gray-200">{gap.title}</span>

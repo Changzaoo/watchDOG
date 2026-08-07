@@ -26,11 +26,11 @@ export function LocalInstallPanel() {
 
   return (
     <>
-      <div className="card border-brand-400/40 bg-brand-400/10">
+      <div className="card border-cyan-900/40 bg-cyan-950/10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-brand-400/40 border border-brand-400/50 flex items-center justify-center flex-shrink-0">
-              <MonitorUp className="w-5 h-5 text-brand-400" />
+            <div className="w-10 h-10 rounded-lg bg-cyan-900/40 border border-cyan-800/50 flex items-center justify-center flex-shrink-0">
+              <MonitorUp className="w-5 h-5 text-cyan-300" />
             </div>
             <div>
               <div className="font-semibold text-gray-200">Instalar watchDOG no computador</div>
@@ -56,7 +56,7 @@ export function LocalInstallPanel() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 text-lg font-semibold text-white">
-                  <Terminal className="w-5 h-5 text-brand-400" />
+                  <Terminal className="w-5 h-5 text-cyan-300" />
                   Instalacao local
                 </div>
                 <p className="text-sm text-gray-500 mt-1">
@@ -89,7 +89,7 @@ export function LocalInstallPanel() {
                   {copied ? 'Copiado' : 'Copiar'}
                 </button>
               </div>
-              <code className="block whitespace-pre-wrap break-all text-xs text-brand-400">{INSTALL_COMMAND}</code>
+              <code className="block whitespace-pre-wrap break-all text-xs text-cyan-200">{INSTALL_COMMAND}</code>
             </div>
           </div>
         </div>
