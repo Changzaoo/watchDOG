@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, PlusCircle, History, LogOut, Wifi, WifiOff
+  LayoutDashboard, PlusCircle, History, LogOut, Wifi, WifiOff, Star
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { cn } from '../lib/utils';
@@ -30,7 +30,7 @@ export function Sidebar() {
       <header className="fixed inset-x-0 top-0 z-30 border-b border-dark-800 bg-dark-850/95 backdrop-blur md:hidden">
         <div className="flex h-16 items-center justify-between px-3">
           <div className="flex min-w-0 items-center gap-3">
-            <AppLogo className="h-9 w-9 flex-shrink-0 rounded-lg bg-dark-900/60 ring-1 ring-blue-500/30" />
+            <AppLogo className="h-9 w-9 flex-shrink-0 rounded-lg bg-dark-900/60 ring-1 ring-brand/30" />
             <div className="min-w-0">
               <div className="truncate text-sm font-bold tracking-wide text-white">watchDOG</div>
               <div className="truncate text-xs text-gray-500">{authUser?.email || 'Security Auditor'}</div>
@@ -82,27 +82,35 @@ export function Sidebar() {
         {/* Logo */}
         <div className="p-4 border-b border-dark-800">
           <div className="flex items-center gap-3">
-            <AppLogo className="w-10 h-10 rounded-lg bg-dark-900/60 ring-1 ring-blue-500/30" />
+            <AppLogo className="w-10 h-10 rounded-lg bg-dark-900/60 ring-1 ring-brand/30" />
             <div>
-              <div className="font-bold text-white text-sm tracking-wide">watchDOG</div>
+              <div className="font-bold text-white text-sm tracking-wide">watch<span className="text-brand">DOG</span></div>
               <div className="text-xs text-gray-500">Security Auditor</div>
             </div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 p-3 space-y-1">
-          {NAV_ITEMS.map(({ to, label, icon: Icon, exact }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={exact}
-              className={({ isActive }) => cn('sidebar-item', isActive && 'active')}
-            >
-              <Icon className="w-4 h-4" />
-              <span className="text-sm">{label}</span>
-            </NavLink>
-          ))}
+        <nav className="flex-1 p-3">
+          <div className="sidebar-label">Análise</div>
+          <div className="space-y-1">
+            {NAV_ITEMS.map(({ to, label, icon: Icon, exact }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={exact}
+                className={({ isActive }) => cn('sidebar-item', isActive && 'active')}
+              >
+                {({ isActive }) => (
+                  <>
+                    <Icon className="w-4 h-4" />
+                    <span className="text-sm">{label}</span>
+                    {isActive && <Star className="ml-auto h-3.5 w-3.5 fill-brand text-brand" />}
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
         </nav>
 
         {/* Backend status */}

@@ -18,7 +18,7 @@ export function LiveLogPanel({ logs, maxHeight = '200px' }: Props) {
   return (
     <div className="card space-y-2">
       <div className="flex items-center gap-2 text-sm text-gray-400 font-medium">
-        <Terminal className="w-4 h-4 text-cyan-400" />
+        <Terminal className="w-4 h-4 text-brand-400" />
         Log em tempo real
       </div>
       <div

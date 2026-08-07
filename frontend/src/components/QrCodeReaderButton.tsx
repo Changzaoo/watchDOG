@@ -109,7 +109,7 @@ export function QrCodeReaderButton({ disabled, onRead }: Props) {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 text-lg font-semibold text-white">
-                  <Camera className="w-5 h-5 text-cyan-300" />
+                  <Camera className="w-5 h-5 text-brand-400" />
                   Ler QR code
                 </div>
                 <p className="text-sm text-gray-500 mt-1">

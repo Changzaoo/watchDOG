@@ -37,14 +37,14 @@ export function Login({ onAuthenticated }: Props) {
     <div className="min-h-screen bg-dark-900 flex items-center justify-center px-3 py-6 sm:p-6">
       <div className="w-full max-w-md space-y-5 animate-fade-in">
         <div className="text-center">
-          <AppLogo className="w-16 h-16 mx-auto rounded-xl bg-dark-850 ring-1 ring-blue-500/30" />
-          <h1 className="mobile-page-title mt-4">watchDOG</h1>
+          <AppLogo className="w-16 h-16 mx-auto rounded-xl bg-dark-850 ring-1 ring-brand/30 shadow-brand-glow" />
+          <h1 className="mobile-page-title mt-4">watch<span className="text-brand">DOG</span></h1>
           <p className="text-sm text-gray-500 mt-1">Acesso protegido pelo Firebase</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card space-y-4">
-          <div className="flex items-start gap-3 rounded-lg border border-cyan-900/40 bg-cyan-950/10 p-3">
-            <ShieldCheck className="w-5 h-5 text-cyan-300 flex-shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 rounded-lg border border-brand/20 bg-brand/5 p-3">
+            <ShieldCheck className="w-5 h-5 text-brand flex-shrink-0 mt-0.5" />
             <p className="text-sm text-gray-400">
               Use uma conta que ja existe no Firebase. Cadastro de novos usuarios nao fica disponivel neste app.
             </p>

@@ -76,7 +76,7 @@ export function FindingCard({ finding }: Props) {
             <SeverityBadge severity={finding.severity} />
             <span className="text-xs text-gray-500 bg-dark-800 px-2 py-0.5 rounded">{finding.category}</span>
             <span className="text-xs font-mono text-gray-600">{finding.ruleId}</span>
-            <span className="text-xs text-cyan-300 bg-cyan-900/20 px-2 py-0.5 rounded">
+            <span className="text-xs text-brand-400 bg-brand-400/20 px-2 py-0.5 rounded">
               Confianca {confidenceLabel}
             </span>
             {finding.occurrences > 1 && (
@@ -172,7 +172,7 @@ export function FindingCard({ finding }: Props) {
                   {copiedPrompt ? 'Copiado!' : 'Copiar prompt'}
                 </button>
               </div>
-              <pre className="font-mono text-xs bg-dark-900 rounded-lg p-3 text-cyan-200 overflow-x-auto whitespace-pre-wrap max-h-56">
+              <pre className="font-mono text-xs bg-dark-900 rounded-lg p-3 text-brand-400 overflow-x-auto whitespace-pre-wrap max-h-56">
                 {finding.fixPrompt}
               </pre>
             </div>

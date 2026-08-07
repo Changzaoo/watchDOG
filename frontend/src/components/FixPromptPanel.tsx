@@ -39,7 +39,7 @@ export function FixPromptPanel({ scan, findings }: Props) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-semibold text-gray-200">
-            <Wand2 className="w-4 h-4 text-cyan-400" />
+            <Wand2 className="w-4 h-4 text-brand-400" />
             Prompt para corrigir vulnerabilidades
           </div>
           <p className="text-xs text-gray-500 mt-1">
@@ -58,7 +58,7 @@ export function FixPromptPanel({ scan, findings }: Props) {
         </div>
       </div>
 
-      <pre className="font-mono text-xs bg-dark-900 rounded-lg p-3 sm:p-4 text-cyan-100 overflow-x-auto whitespace-pre-wrap max-h-96">
+      <pre className="font-mono text-xs bg-dark-900 rounded-lg p-3 sm:p-4 text-brand-400 overflow-x-auto whitespace-pre-wrap max-h-96">
         {prompt}
       </pre>
     </div>

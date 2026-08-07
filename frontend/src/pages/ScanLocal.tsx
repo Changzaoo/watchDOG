@@ -47,7 +47,7 @@ export function ScanLocal() {
         </button>
         <div className="min-w-0">
           <h1 className="mobile-section-title flex items-center gap-2">
-            <FolderOpen className="h-5 w-5 flex-shrink-0 text-violet-400" />
+            <FolderOpen className="h-5 w-5 flex-shrink-0 text-brand" />
             Análise de Projeto Local
           </h1>
           <p className="text-gray-500 text-sm">Informe o caminho do projeto para análise completa</p>
@@ -100,7 +100,7 @@ export function ScanLocal() {
                 key={ex}
                 type="button"
                 onClick={() => setProjectPath(ex)}
-                className="block max-w-full truncate text-left font-mono text-xs text-violet-500 transition-colors hover:text-violet-400"
+                className="block max-w-full truncate text-left font-mono text-xs text-brand transition-colors hover:text-brand"
               >
                 {ex}
               </button>

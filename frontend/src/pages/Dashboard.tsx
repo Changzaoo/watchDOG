@@ -26,7 +26,7 @@ function ScanCard({ scan }: { scan: Scan }) {
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex min-w-0 items-center gap-2">
-          {scan.type === 'url' ? <Globe className="w-4 h-4 text-cyan-400" /> : <FolderOpen className="w-4 h-4 text-violet-400" />}
+          {scan.type === 'url' ? <Globe className="w-4 h-4 text-brand-400" /> : <FolderOpen className="w-4 h-4 text-brand" />}
           <span className="min-w-0 truncate font-semibold text-gray-200 transition-colors group-hover:text-white">
             {scan.projectName}
           </span>
@@ -104,7 +104,7 @@ export function Dashboard() {
       </div>
 
       {visibleScans.length === 0 && (
-        <div className="card border-dashed border-violet-800/50 bg-violet-900/5 text-center py-4">
+        <div className="card border-dashed border-brand/50 bg-brand/5 text-center py-4">
           <AppLogo className="w-12 h-12 mx-auto mb-2 opacity-80" />
           <p className="text-gray-500 text-sm">Modo demo — dados simulados. Inicie seu primeiro scan!</p>
         </div>
@@ -132,7 +132,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         <div className="card md:col-span-1">
           <div className="text-sm font-semibold text-gray-300 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-violet-400" />
+            <TrendingUp className="w-4 h-4 text-brand" />
             Distribuição de Severidade
           </div>
           <SeverityChart summary={displaySummary} />
@@ -140,7 +140,7 @@ export function Dashboard() {
 
         <div className="card md:col-span-2">
           <div className="text-sm font-semibold text-gray-300 mb-4 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-cyan-400" />
+            <Clock className="w-4 h-4 text-brand-400" />
             Estatísticas Gerais
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-4">
@@ -185,18 +185,18 @@ export function Dashboard() {
           {localScansEnabled && (
           <button
             onClick={() => navigate('/scan/local')}
-            className="card touch-row hover:border-violet-800/50 cursor-pointer transition-all group text-left"
+            className="card touch-row hover:border-brand/50 cursor-pointer transition-all group text-left"
           >
-            <FolderOpen className="w-6 h-6 text-violet-400 mb-2" />
+            <FolderOpen className="w-6 h-6 text-brand mb-2" />
             <div className="font-semibold text-gray-200">Analisar Projeto Local</div>
             <div className="text-xs text-gray-500 mt-1">Análise estática de código, configs, dependências</div>
           </button>
           )}
           <button
             onClick={() => navigate('/scan/url')}
-            className="card touch-row hover:border-cyan-800/50 cursor-pointer transition-all group text-left"
+            className="card touch-row hover:border-brand-400/50 cursor-pointer transition-all group text-left"
           >
-            <Globe className="w-6 h-6 text-cyan-400 mb-2" />
+            <Globe className="w-6 h-6 text-brand-400 mb-2" />
             <div className="font-semibold text-gray-200">Analisar URL Online</div>
             <div className="text-xs text-gray-500 mt-1">Headers, CORS, TLS, caminhos expostos</div>
           </button>
