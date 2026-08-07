@@ -78,7 +78,7 @@ export function Sidebar() {
         </div>
       </nav>
 
-      <aside className="sticky top-0 hidden h-screen w-60 flex-shrink-0 flex-col border-r border-dark-800 bg-dark-850 md:flex">
+      <aside className="hidden h-full w-60 flex-shrink-0 flex-col border-r border-dark-800 bg-dark-850 md:flex">
         {/* Logo */}
         <div className="p-4 border-b border-dark-800">
           <div className="flex items-center gap-3">
