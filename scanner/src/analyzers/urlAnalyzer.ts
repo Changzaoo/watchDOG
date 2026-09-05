@@ -132,6 +132,7 @@ const STEPS = [
 
 export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
   const { url, scanId, onEvent, customHeaders = {}, depth = 'normal' } = opts;
+  const base = url.replace(/\/$/, '');
   const findings: Array<Omit<Finding, 'id' | 'createdAt'>> = [];
   const logs: Array<Omit<ScanLog, 'id' | 'createdAt'>> = [];
   const techStack: TechStack[] = [];
@@ -202,6 +203,21 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
     );
     return { findings, techStack, logs };
   }
+
+  // Guardas anti-falso-positivo para sondagem de caminhos:
+  //  - redirectedAway: o alvo respondeu 3xx e o salto final caiu em OUTRO path
+  //    (ex.: /.env -> /). Seguir o redirect e ver a home em 200 NÃO é "acessível".
+  //  - isSpaFallback: SPA devolve o index.html (200) para qualquer rota.
+  const homeBody = mainResponse.body;
+  const isSpaFallback = (body: string) =>
+    /<!doctype html|<html/i.test(body) && (body === homeBody || Math.abs(body.length - homeBody.length) < 64);
+  const redirectedAway = (resp: { redirectChain: string[]; finalUrl?: string }, pathStr: string) => {
+    if (resp.redirectChain.length === 0) return false;
+    try {
+      const finalPath = new URL(resp.finalUrl || '').pathname.replace(/\/$/, '');
+      return finalPath !== pathStr.replace(/\/$/, '');
+    } catch { return true; }
+  };
 
   log('info', `Status HTTP: ${mainResponse.statusCode} | Redirects: ${mainResponse.redirectChain.length}${mainResponse.truncated ? ' | corpo truncado' : ''}`);
 
@@ -423,40 +439,49 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
     }
     consecutiveBlocks = 0;
 
+    if (resp.statusCode === 200 && redirectedAway(resp, checkPathStr)) {
+      log('info', `Caminho ${checkPathStr} redireciona para ${resp.finalUrl} — não considerado acessível.`);
+      continue;
+    }
+    if (resp.statusCode === 200 && isSpaFallback(resp.body)) {
+      log('info', `Caminho ${checkPathStr} devolveu o index.html (fallback de SPA) — não considerado acessível.`);
+      continue;
+    }
+
     if (resp.statusCode === 200) {
       log('info', `Caminho acessível: ${checkPathStr} (${resp.statusCode})`);
 
-      if (checkPathStr === '/swagger' || checkPathStr === '/api-docs') {
+      if ((checkPathStr === '/swagger' || checkPathStr === '/api-docs') && /swagger|openapi|redoc/i.test(resp.body)) {
         addFinding(
           'API_001', 'Swagger/API docs público', 'API', 'low',
           'Documentação da API está publicamente acessível.',
           'Facilita reconhecimento por atacantes.',
           'Proteja documentação com autenticação em produção.',
-          `${url}${checkPathStr}`,
+          `${base}${checkPathStr}`,
           undefined,
           'OWASP API9:2023'
         );
       }
 
-      if (checkPathStr === '/graphql') {
+      if (checkPathStr === '/graphql' && /graphql|"errors"|"data"|query/i.test(resp.body)) {
         addFinding(
           'API_002', 'GraphQL endpoint público', 'API', 'medium',
           'Endpoint GraphQL acessível sem autenticação.',
           'Possível introspection do schema completo.',
           'Restrinja acesso e desabilite introspection em produção.',
-          `${url}${checkPathStr}`,
+          `${base}${checkPathStr}`,
           undefined,
           'OWASP API9:2023'
         );
       }
 
-      if (checkPathStr === '/.env') {
+      if (checkPathStr === '/.env' && /^[A-Z][A-Z0-9_]*s*=/m.test(resp.body) && !/<html|<!doctype/i.test(resp.body)) {
         addFinding(
           'SECRET_004', 'Arquivo .env publicamente acessível', 'Secrets', 'critical',
           'O arquivo .env está acessível publicamente.',
           'Todos os secrets da aplicação estão expostos.',
           'Bloqueie acesso a arquivos .env no servidor web. Nunca sirva arquivos de configuração.',
-          `${url}/.env`,
+          `${base}/.env`,
           undefined,
           'OWASP A04:2025'
         );
@@ -468,7 +493,7 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
           `Endpoint ${checkPathStr} está publicamente acessível.`,
           'Exposição de informações internas da aplicação.',
           'Remova ou proteja endpoints de diagnóstico.',
-          `${url}${checkPathStr}`,
+          `${base}${checkPathStr}`,
           undefined,
           'OWASP A02:2025'
         );
@@ -480,7 +505,7 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
           'Painel administrativo retornou status 200.',
           'Painel admin pode estar acessível sem autenticação.',
           'Verifique se o painel exige autenticação. Restrinja por IP se possível.',
-          `${url}/admin`,
+          `${base}/admin`,
           undefined,
           'OWASP A01:2025'
         );
@@ -492,32 +517,32 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
           'O arquivo /.git/HEAD está acessível, indicando que o diretório .git foi publicado junto com a aplicação.',
           'Atacantes podem reconstruir todo o histórico do repositório (código-fonte, secrets commitados, credenciais) baixando os objetos do .git.',
           'Bloqueie o acesso a /.git no servidor web (deny all em /.git/) e nunca faça deploy do diretório de versionamento.',
-          `${url}/.git/HEAD`,
+          `${base}/.git/HEAD`,
           'location /.git { deny all; return 404; }',
           'OWASP A02:2025 - Security Misconfiguration',
           'high'
         );
       }
 
-      if (checkPathStr === '/actuator/health') {
+      if (checkPathStr === '/actuator/health' && /"status"s*:/.test(resp.body)) {
         addFinding(
           'EXPOSE_002', 'Spring Boot Actuator exposto', 'Exposição', 'medium',
           'O endpoint /actuator/health respondeu 200, indicando endpoints de gestão Spring Boot Actuator acessíveis.',
           'Endpoints Actuator podem vazar variáveis de ambiente (/actuator/env), heap dumps e métricas internas, facilitando reconhecimento e exposição de secrets.',
           'Restrinja os endpoints Actuator a uma porta de gestão interna e exija autenticação (management.endpoints.web.exposure.include mínimo).',
-          `${url}/actuator/health`,
+          `${base}/actuator/health`,
           'management.endpoints.web.exposure.include=health',
           'OWASP A02:2025 - Security Misconfiguration'
         );
       }
 
-      if (checkPathStr === '/.well-known/openid-configuration') {
+      if (checkPathStr === '/.well-known/openid-configuration' && /"issuer"s*:/.test(resp.body)) {
         addFinding(
           'EXPOSE_003', 'Metadados OpenID Connect públicos', 'Exposição', 'info',
           'O documento de descoberta OpenID Connect está publicamente acessível, expondo endpoints de autorização, token, JWKS e escopos suportados.',
           'Expor a configuração do provedor de identidade é normal para OIDC, mas revela superfície de ataque (endpoints, algoritmos aceitos) útil em reconhecimento.',
           'Mantenha apenas os endpoints necessários expostos e garanta que algoritmos fracos (ex.: none, HS256 com segredo compartilhado) não estejam habilitados.',
-          `${url}/.well-known/openid-configuration`,
+          `${base}/.well-known/openid-configuration`,
           undefined,
           'OWASP A07:2025 - Authentication Failures',
           'high'
@@ -532,6 +557,13 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
   // ponto que o atacante do vídeo achou por fuzzing. Alertamos de forma
   // defensiva para o dono garantir verificação de assinatura no handler.
   if (depth !== 'quick') {
+    // Baseline: como o alvo responde a um path inexistente na raiz e sob /api/?
+    // Se um path de webhook responder com o MESMO status do baseline (ex.: 401
+    // para qualquer /api/*), isso é o portão genérico, não prova de endpoint.
+    const rnd = Math.random().toString(36).slice(2, 8);
+    const rootBaseline = (await checkPath(url, `/watchdog-probe-${rnd}`)).statusCode;
+    const apiBaseline = (await checkPath(url, `/api/watchdog-probe-${rnd}`)).statusCode;
+
     let webhookBlocks = 0;
     for (const whPath of WEBHOOK_PATHS_TO_CHECK) {
       const resp = await checkPath(url, whPath);
@@ -545,13 +577,15 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
 
       // 404/403 => rota não exposta a GET; qualquer outro status "vivo" indica
       // que o endpoint de webhook existe.
-      if ([200, 400, 401, 405, 415, 422, 500].includes(resp.statusCode)) {
+      const fakeOk = resp.statusCode === 200 && (redirectedAway(resp, whPath) || isSpaFallback(resp.body));
+      const genericGate = resp.statusCode === (whPath.startsWith('/api/') ? apiBaseline : rootBaseline);
+      if (!fakeOk && !genericGate && [200, 400, 401, 405, 415, 422, 500].includes(resp.statusCode)) {
         addFinding(
           'WHOOK_007', 'Endpoint de webhook de pagamento descobrível', 'Webhook/Pagamento', 'medium',
           `O caminho ${whPath} respondeu HTTP ${resp.statusCode} a uma requisição GET, indicando que existe um endpoint de webhook publicamente descobrível (sem enviar nenhum evento de pagamento).`,
           'Webhooks de pagamento são o alvo clássico de bypass de assinatura: se o handler não validar a assinatura do provedor, um evento forjado de "pagamento aprovado" pode liberar acesso pago. No vídeo, o webhook foi achado exatamente assim, por fuzzing.',
           'Garanta que o handler valide a assinatura do provedor (HMAC/constructEvent) em tempo constante e confirme a transação na API oficial antes de conceder qualquer acesso. Considere um caminho de webhook não previsível e restrição por IP do provedor. Remova endpoints de webhook legados/redundantes.',
-          `${url}${whPath} -> HTTP ${resp.statusCode}`,
+          `${base}${whPath} -> HTTP ${resp.statusCode}`,
           "// event = stripe.webhooks.constructEvent(rawBody, sig, WEBHOOK_SECRET)\n// -> valida assinatura ANTES de processar o evento",
           'OWASP API2:2023 - Broken Authentication; CWE-345',
           'low'
@@ -589,7 +623,7 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
       'O arquivo /.well-known/security.txt não foi encontrado. Ele documenta como pesquisadores devem reportar vulnerabilidades encontradas na sua aplicação.',
       'Sem um canal claro de contato, quem encontra uma falha de boa-fé pode não conseguir reportá-la — aumentando a chance de a vulnerabilidade ser divulgada publicamente ou explorada antes da correção.',
       'Publique /.well-known/security.txt com um contato de segurança, política de divulgação e prazo de expiração, conforme a RFC 9116.',
-      `${url}/.well-known/security.txt -> HTTP ${securityTxt.statusCode || 'sem resposta'}`,
+      `${base}/.well-known/security.txt -> HTTP ${securityTxt.statusCode || 'sem resposta'}`,
       'Contact: mailto:security@seudominio.com\nExpires: 2027-01-01T00:00:00.000Z\nPreferred-Languages: pt, en',
       'RFC 9116 - A File Format to Aid in Security Vulnerability Disclosure',
       'high'
@@ -619,7 +653,7 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
           `O source map ${mapPath} está acessível publicamente e contém o mapeamento para o código-fonte original da aplicação.`,
           'Source maps reconstroem o código-fonte antes da minificação: revelam nomes de variáveis, comentários, lógica de negócio, rotas internas de API e, com frequência, chaves ou endpoints que o desenvolvedor achava ocultos pela minificação.',
           'Desative a geração de source maps no build de produção (build.sourcemap: false no Vite, productionBrowserSourceMaps: false no Next.js) ou restrinja o acesso a eles no servidor/CDN.',
-          `${url}${mapPath} -> HTTP 200 com "mappings"`,
+          `${base}${mapPath} -> HTTP 200 com "mappings"`,
           '// vite.config.ts\nexport default defineConfig({ build: { sourcemap: false } });',
           'OWASP A02:2025 - Security Misconfiguration; CWE-540',
           'high'
@@ -650,7 +684,7 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
           `O caminho ${leakPath} respondeu HTTP 200 com conteúdo, indicando um artefato de configuração ou backup publicado junto com a aplicação.`,
           'Arquivos de backup e configuração costumam conter credenciais de banco, tokens de API e estrutura interna — material suficiente para comprometer a aplicação inteira sem precisar de nenhuma outra falha.',
           'Remova o arquivo do diretório publicado, bloqueie o padrão no servidor web/CDN e revogue imediatamente qualquer credencial que ele possa ter exposto.',
-          `${url}${leakPath} -> HTTP 200 (${resp.body.length} bytes)`,
+          `${base}${leakPath} -> HTTP 200 (${resp.body.length} bytes)`,
           'location ~ /\\.(env|npmrc|git|DS_Store)|\\.(bak|old|sql|swp)$ { deny all; return 404; }',
           'OWASP A02:2025 - Security Misconfiguration; CWE-530',
           'medium'
@@ -718,7 +752,7 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
           `A aplicação retornou uma página de erro verbosa característica de ${sig.tech} ao acessar um caminho inexistente, indicando modo debug ligado em produção.`,
           `${sig.note} Stack traces revelam caminhos internos, versões, trechos de configuração e a estrutura do código — reconhecimento pronto para o atacante.`,
           `Desligue o modo debug em produção (APP_DEBUG=false / DEBUG=False / NODE_ENV=production / customErrors On) e sirva páginas de erro genéricas.`,
-          `${url}${probePath} -> assinatura de ${sig.tech}`,
+          `${base}${probePath} -> assinatura de ${sig.tech}`,
           undefined,
           'OWASP A10:2025 - Mishandling of Exceptional Conditions; CWE-209',
           'high'
@@ -752,7 +786,7 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
         continue;
       }
       actBlocks = 0;
-      const looksActuator = resp.statusCode === 200 &&
+      const looksActuator = resp.statusCode === 200 && !redirectedAway(resp, act.path) &&
         (act.headOnly || /["']\w+["']\s*:|propertySources|activeProfiles|contexts|_links/.test(resp.body) ||
           (resp.headers['content-type'] || '').includes('application/vnd.spring-boot') ||
           (resp.headers['content-type'] || '').includes('application/octet-stream'));
@@ -762,7 +796,7 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
           `O endpoint ${act.path} respondeu 200 sem autenticação, expondo ${act.label}.`,
           'Endpoints Actuator sensíveis vazam variáveis de ambiente, dumps de memória com secrets e a estrutura interna da aplicação, e alguns permitem alteração de estado (loggers, shutdown).',
           'Restrinja os endpoints Actuator a uma porta de gestão interna e exija autenticação (management.endpoints.web.exposure.include mínimo; nunca exponha env/heapdump publicamente).',
-          `${url}${act.path} -> HTTP ${resp.statusCode}`,
+          `${base}${act.path} -> HTTP ${resp.statusCode}`,
           'management.endpoints.web.exposure.include=health\nmanagement.endpoint.env.enabled=false',
           'OWASP A02:2025 - Security Misconfiguration; CWE-215',
           'high'
@@ -783,13 +817,13 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
         continue;
       }
       adminBlocks = 0;
-      if (resp.statusCode === 200 && t.signature.test(resp.body)) {
+      if (resp.statusCode === 200 && !redirectedAway(resp, t.path) && t.signature.test(resp.body)) {
         addFinding(
           'EXPOSE_010', `Ferramenta administrativa exposta: ${t.tool}`, 'Exposição', t.severity,
           `${t.tool} está publicamente acessível em ${t.path} e respondeu com sua interface característica.`,
           `Ferramentas como ${t.tool} dão acesso direto a dados/infraestrutura e frequentemente vêm com credenciais padrão ou sem autenticação, sendo alvo automático de scanners.`,
           `Restrinja o acesso a ${t.tool} por IP/VPN, exija autenticação forte e troque credenciais padrão. Idealmente, não exponha essa ferramenta à internet.`,
-          `${url}${t.path} -> ${t.tool}`,
+          `${base}${t.path} -> ${t.tool}`,
           undefined,
           'OWASP A02:2025 - Security Misconfiguration',
           'medium'
@@ -805,13 +839,13 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
   const isWordPress = /wp-content|wp-includes|wp-json/.test(mainResponse.body);
   if (isWordPress && depth !== 'quick') {
     const usersResp = await checkPath(url, '/wp-json/wp/v2/users');
-    if (usersResp.statusCode === 200 && /"slug"\s*:|"id"\s*:\s*\d+/.test(usersResp.body)) {
+    if (usersResp.statusCode === 200 && !redirectedAway(usersResp, '/wp-json/wp/v2/users') && /"slug"\s*:|"id"\s*:\s*\d+/.test(usersResp.body)) {
       addFinding(
         'WP_001', 'WordPress: enumeração de usuários via REST API', 'API', 'medium',
         'O endpoint /wp-json/wp/v2/users retornou a lista de usuários (id, slug, nome) sem autenticação.',
         'Enumerar usuários entrega nomes de login válidos para ataques de força bruta direcionados e engenharia social.',
         'Bloqueie ou restrinja o endpoint /wp-json/wp/v2/users a usuários autenticados (plugin de hardening ou filtro rest_endpoints).',
-        `${url}/wp-json/wp/v2/users -> 200 com usuários`,
+        `${base}/wp-json/wp/v2/users -> 200 com usuários`,
         undefined,
         'OWASP A01:2025 - Broken Access Control',
         'high'
@@ -824,7 +858,7 @@ export async function analyzeUrl(opts: UrlScanOptions): Promise<ScanResultRaw> {
         'O arquivo /xmlrpc.php está ativo. Ele suporta system.multicall (centenas de senhas por requisição) e pingback.ping.',
         'system.multicall amplifica ataques de força bruta; pingback.ping pode ser abusado para SSRF e amplificação de DDoS contra terceiros a partir do seu servidor.',
         'Desabilite o XML-RPC se não for usado (bloqueio no servidor web ou filtro xmlrpc_enabled) ou restrinja pingback e multicall.',
-        `${url}/xmlrpc.php -> XML-RPC ativo`,
+        `${base}/xmlrpc.php -> XML-RPC ativo`,
         'location = /xmlrpc.php { deny all; }',
         'OWASP A02:2025 - Security Misconfiguration; CWE-799',
         'high'

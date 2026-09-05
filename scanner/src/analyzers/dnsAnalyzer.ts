@@ -86,17 +86,24 @@ export async function analyzeDns(url: string, scanId: string): Promise<RawFindin
 
   const add = (f: RawFinding) => findings.push(f);
 
+  // O domínio recebe/envia e-mail? Sem MX, SPF/DMARC continuam importantes
+  // (impedir spoofing "de" @dominio), mas DKIM/MTA-STS não se aplicam.
+  const hasMx = await dns.resolveMx(domain).then(r => r.length > 0).catch(() => false);
+  const noMailNote = hasMx ? '' : ` O domínio não tem registro MX (não recebe e-mail), então o objetivo aqui é só impedir que terceiros enviem e-mails forjados em seu nome.`;
+
   // --- SPF (DNS_001 / DNS_002) ---
   const rootTxt = await resolveTxtSafe(domain);
   const spf = rootTxt.find(t => /^v=spf1/i.test(t.trim()));
   if (!spf) {
     add(baseFinding(
-      scanId, url, 'DNS_001', 'SPF ausente no domínio', 'high',
-      `Não há registro SPF (v=spf1) no TXT de ${domain}. SPF declara quais servidores podem enviar e-mail em nome do domínio.`,
+      scanId, url, 'DNS_001', 'SPF ausente no domínio', hasMx ? 'high' : 'medium',
+      `Não há registro SPF (v=spf1) no TXT de ${domain}. SPF declara quais servidores podem enviar e-mail em nome do domínio.${noMailNote}`,
       'Sem SPF, qualquer servidor pode enviar e-mail forjado "de" @' + domain + ', facilitando phishing e spoofing contra seus próprios clientes e parceiros.',
-      'Publique um registro SPF listando apenas os provedores de envio legítimos e terminando em -all (hard fail).',
+      hasMx
+        ? 'Publique um registro SPF listando apenas os provedores de envio legítimos e terminando em -all (hard fail).'
+        : 'Domínio sem e-mail: publique o SPF "v=spf1 -all" (nenhum servidor autorizado) para bloquear spoofing.',
       undefined,
-      'v=spf1 include:_spf.google.com include:sendgrid.net -all',
+      hasMx ? 'v=spf1 include:_spf.google.com include:sendgrid.net -all' : 'v=spf1 -all',
       'RFC 7208 - Sender Policy Framework'
     ));
   } else {
@@ -130,12 +137,14 @@ export async function analyzeDns(url: string, scanId: string): Promise<RawFindin
   const dmarc = dmarcTxt.find(t => /^v=DMARC1/i.test(t.trim()));
   if (!dmarc) {
     add(baseFinding(
-      scanId, url, 'DNS_003', 'DMARC ausente no domínio', 'high',
-      `Não há registro DMARC em _dmarc.${domain}. DMARC instrui os receptores sobre o que fazer com e-mails que falham SPF/DKIM.`,
+      scanId, url, 'DNS_003', 'DMARC ausente no domínio', hasMx ? 'high' : 'medium',
+      `Não há registro DMARC em _dmarc.${domain}. DMARC instrui os receptores sobre o que fazer com e-mails que falham SPF/DKIM.${noMailNote}`,
       'Sem DMARC, mesmo com SPF/DKIM os receptores não têm política clara, e o domínio permanece explorável para phishing dirigido (BEC).',
-      'Publique DMARC começando em p=none com rua= para coletar relatórios, e evolua para p=quarantine e depois p=reject.',
+      hasMx
+        ? 'Publique DMARC começando em p=none com rua= para coletar relatórios, e evolua para p=quarantine e depois p=reject.'
+        : 'Domínio sem e-mail: publique diretamente "v=DMARC1; p=reject" para que receptores rejeitem qualquer e-mail forjado em seu nome.',
       undefined,
-      'v=DMARC1; p=reject; rua=mailto:dmarc@' + domain + '; adkim=s; aspf=s',
+      hasMx ? 'v=DMARC1; p=reject; rua=mailto:dmarc@' + domain + '; adkim=s; aspf=s' : 'v=DMARC1; p=reject',
       'RFC 7489 - DMARC'
     ));
   } else {
@@ -154,8 +163,9 @@ export async function analyzeDns(url: string, scanId: string): Promise<RawFindin
   }
 
   // --- DKIM (DNS_005) — heurístico: nenhum seletor comum encontrado ---
-  let anyDkim = false;
-  for (const sel of COMMON_DKIM_SELECTORS) {
+  // Só faz sentido para domínios que enviam e-mail (com MX).
+  let anyDkim = !hasMx;
+  for (const sel of hasMx ? COMMON_DKIM_SELECTORS : []) {
     const rec = await resolveTxtSafe(`${sel}._domainkey.${domain}`);
     if (rec.some(t => /v=DKIM1|k=rsa|p=/i.test(t))) { anyDkim = true; break; }
   }
@@ -173,8 +183,8 @@ export async function analyzeDns(url: string, scanId: string): Promise<RawFindin
   }
 
   // --- MTA-STS (DNS_006) ---
-  const mtaStsTxt = await resolveTxtSafe('_mta-sts.' + domain);
-  const hasMtaSts = mtaStsTxt.some(t => /v=STSv1/i.test(t));
+  const mtaStsTxt = hasMx ? await resolveTxtSafe('_mta-sts.' + domain) : [];
+  const hasMtaSts = !hasMx || mtaStsTxt.some(t => /v=STSv1/i.test(t));
   if (!hasMtaSts) {
     add(baseFinding(
       scanId, url, 'DNS_006', 'MTA-STS ausente', 'low',
