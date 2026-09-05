@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   Globe, FolderOpen, AlertTriangle, Filter, Search,
-  ArrowLeft, RefreshCw, ShieldAlert, ShieldCheck
+  ArrowLeft, RefreshCw, ShieldAlert, ShieldCheck, RotateCw
 } from 'lucide-react';
 import { Finding, Severity } from '@sentinelscope/shared';
 import { api } from '../lib/api';
@@ -18,6 +18,7 @@ import { ExportReportButton } from '../components/ExportReportButton';
 import { FixPromptPanel } from '../components/FixPromptPanel';
 import { AppLogo } from '../components/AppLogo';
 import { formatDate, formatDuration, severityLabel } from '../lib/utils';
+import { shouldRedirectToUrlScan } from '../lib/scanGuard';
 
 export function ScanResult() {
   const { id } = useParams<{ id: string }>();
@@ -38,53 +39,138 @@ export function ScanResult() {
 
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ severity: '', category: '', status: '', search: '' });
-  const [eventSource, setEventSource] = useState<ReturnType<typeof api.listenScanEvents> | null>(null);
   const [error, setError] = useState('');
+  const [rescanning, setRescanning] = useState(false);
+  // Erro da nova verificação fica separado: usar o `error` da página trocaria o
+  // resultado inteiro por uma tela de erro e o usuário perderia os achados.
+  const [rescanError, setRescanError] = useState('');
 
-  useEffect(() => {
-    if (!id) return;
-    loadScan();
+  // O stream SSE e o polling vivem em refs: guardá-los em state fazia o cleanup
+  // do useEffect capturar o valor do primeiro render (sempre null) e nunca
+  // fechar a conexão anterior — vazando streams a cada troca de scan.
+  const eventSourceRef = useRef<ReturnType<typeof api.listenScanEvents> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Evita que respostas de um scan antigo (requisição lenta) sobrescrevam o atual.
+  const currentIdRef = useRef<string | undefined>(id);
 
-    return () => { eventSource?.close(); };
-  }, [id]);
-
-  useEffect(() => {
-    if (backendHealthChecked && currentScan?.type !== 'url' && !localScansEnabled) {
-      navigate('/scan/url', { replace: true });
-    }
-  }, [backendHealthChecked, currentScan, localScansEnabled, navigate]);
-
-  async function loadScan() {
-    if (!id) return;
-    try {
-      setLoading(true);
-      const data = await api.getScan(id);
-      setCurrentScan(data.scan as any);
-      setCurrentFindings(data.findings as any);
-      setCurrentLogs(data.logs as any);
-
-      if (data.scan.status === 'running' || data.scan.status === 'pending') {
-        startListening(id);
-      }
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
+  function stopWatching() {
+    eventSourceRef.current?.close();
+    eventSourceRef.current = null;
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
     }
   }
 
-  function startListening(scanId: string) {
-    const es = api.listenScanEvents(scanId, (event) => {
-      if (event.type === 'log') {
-        addLog({ id: Date.now().toString(), scanId, level: event.level || 'info', message: event.message, createdAt: new Date().toISOString() });
-      } else if (event.type === 'progress') {
-        setScanProgress({ step: event.data?.step || event.step || '', progress: event.data?.progress ?? event.progress ?? 0 });
-        if ((event.data?.progress ?? event.progress) === 100) {
-          setTimeout(() => loadScan(), 1000);
-        }
-      }
+  useEffect(() => {
+    if (!id) return;
+    currentIdRef.current = id;
+    // Troca de scan sem desmontar o componente (ex.: "Verificar novamente"):
+    // zera o painel para não exibir progresso/logs/erro do scan anterior.
+    setLoading(true);
+    setError('');
+    setRescanError('');
+    setScanProgress(null);
+    setCurrentLogs([]);
+    loadScan();
+
+    return () => stopWatching();
+  }, [id]);
+
+  // Guard de scan LOCAL num backend que não permite scan local.
+  //
+  // ⚠️ Este efeito já mandou o usuário de volta ao formulário no meio de todo
+  // primeiro scan da sessão: `currentScan` é global e começa `null`, então
+  // `currentScan?.type !== 'url'` era `undefined !== 'url'` -> true, e o
+  // redirect disparava ANTES de o loadScan() preencher a store. Na segunda
+  // tentativa a store já tinha um scan 'url' e passava — daí o "só vai na
+  // segunda vez". Agora só redireciona com o scan JÁ carregado e confirmado
+  // como local (e do id da rota atual).
+  useEffect(() => {
+    const redirect = shouldRedirectToUrlScan({
+      loading,
+      backendHealthChecked,
+      localScansEnabled,
+      routeId: id,
+      scan: currentScan,
     });
-    setEventSource(es);
+    if (redirect) navigate('/scan/url', { replace: true });
+  }, [loading, backendHealthChecked, currentScan, localScansEnabled, id, navigate]);
+
+  async function loadScan() {
+    const scanId = id;
+    if (!scanId) return;
+    try {
+      const data = await api.getScan(scanId);
+      if (currentIdRef.current !== scanId) return; // resposta obsoleta
+      setCurrentScan(data.scan as any);
+      setCurrentFindings(data.findings as any);
+      setError('');
+
+      const running = data.scan.status === 'running' || data.scan.status === 'pending';
+      // Os logs só são gravados no banco ao FIM do scan; enquanto roda, o que
+      // existe são os do SSE. Sobrescrever aqui (o polling roda a cada 5s)
+      // apagaria o log ao vivo da tela. Só troca quando vier conteúdo real.
+      if (!running || data.logs.length > 0) {
+        setCurrentLogs(data.logs as any);
+      }
+
+      if (running) {
+        startWatching(scanId);
+      } else {
+        stopWatching();
+        setScanProgress(null);
+      }
+    } catch (e: any) {
+      if (currentIdRef.current === scanId) setError(e.message);
+    } finally {
+      if (currentIdRef.current === scanId) setLoading(false);
+    }
+  }
+
+  function startWatching(scanId: string) {
+    if (!eventSourceRef.current) {
+      eventSourceRef.current = api.listenScanEvents(scanId, (event) => {
+        if (currentIdRef.current !== scanId) return;
+        if (event.type === 'log') {
+          addLog({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, scanId, level: event.level || 'info', message: event.message, createdAt: new Date().toISOString() });
+        } else if (event.type === 'progress') {
+          setScanProgress({ step: event.data?.step || event.step || '', progress: event.data?.progress ?? event.progress ?? 0 });
+          if ((event.data?.progress ?? event.progress) === 100) {
+            setTimeout(() => loadScan(), 1000);
+          }
+        }
+      });
+    }
+
+    // Rede de segurança: o backend só registra o emitter quando o SSE conecta,
+    // então todo evento disparado antes disso se perde — e a tela ficava parada
+    // em "running" para sempre. O polling garante que ela sempre chega ao fim,
+    // mesmo se o stream cair ou nunca entregar o progresso 100.
+    if (!pollRef.current) {
+      pollRef.current = setInterval(() => {
+        if (currentIdRef.current === scanId) loadScan();
+      }, 5000);
+    }
+  }
+
+  // Refaz a verificação no alvo: cria um novo scan com o mesmo destino e leva
+  // para o resultado novo, preservando o scan antigo no histórico p/ comparação.
+  async function handleRescan() {
+    if (!currentScan || rescanning) return;
+    setRescanning(true);
+    setRescanError('');
+    try {
+      const { scanId } = currentScan.type === 'url'
+        ? await api.startUrlScan(currentScan.target, { depth: 'normal' })
+        : await api.startLocalScan(currentScan.target, currentScan.projectName);
+      stopWatching();
+      navigate(`/scans/${scanId}`);
+    } catch (e: any) {
+      setRescanError(e.message || 'Nao foi possivel iniciar a nova verificacao');
+    } finally {
+      setRescanning(false);
+    }
   }
 
   const filtered = currentFindings.filter(f => {
@@ -180,11 +266,31 @@ export function ScanResult() {
               <ExportReportButton scanId={currentScan.id} />
             </>
           )}
-          <button onClick={loadScan} className="btn-secondary touch-row flex items-center justify-center p-2">
+          <button
+            onClick={handleRescan}
+            disabled={rescanning || isRunning}
+            title={isRunning ? 'Aguarde a analise atual terminar' : 'Executar a analise novamente no mesmo alvo'}
+            className="btn-secondary touch-row flex flex-1 items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed sm:flex-none"
+          >
+            <RotateCw className={`w-4 h-4 ${rescanning ? 'animate-spin' : ''}`} />
+            {rescanning ? 'Iniciando...' : 'Verificar novamente'}
+          </button>
+          <button
+            onClick={loadScan}
+            title="Recarregar os dados desta analise"
+            className="btn-secondary touch-row flex items-center justify-center p-2"
+          >
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      {rescanError && (
+        <div className="flex items-center gap-2 rounded-lg border border-red-800/50 bg-red-900/20 px-3 py-2 text-sm text-red-400">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          {rescanError}
+        </div>
+      )}
 
       {/* Progress */}
       {isRunning && scanProgress && (
