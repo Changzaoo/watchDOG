@@ -154,7 +154,7 @@ export const supplyChainRules: FileRule[] = [
     remediation: 'Não execute conteúdo decodificado dinamicamente. Remova eval()/new Function() sobre dados decodificados, audite dependências em busca de blobs base64 grandes e use ferramentas de SCA/varredura de malware no pipeline. Aplique CSP e bloqueie egress não autorizado.',
     safeExample: '// Em vez de eval(Buffer.from(b64, "base64").toString()):\nconst config = JSON.parse(Buffer.from(b64, "base64").toString());\n// Apenas desserialize dados, nunca execute o conteúdo decodificado.',
     testSuggestion: 'Crie um arquivo com eval(atob("...")) ou new Function(Buffer.from(...)) e confirme o disparo; verifique que JSON.parse(Buffer.from(...)) (sem execução) não dispara.',
-    reference: 'OWASP A03:2021 - Injection; Socket/Snyk: detecção de malware ofuscado em npm',
+    reference: 'OWASP A05:2025 - Injection; Socket/Snyk: detecção de malware ofuscado em npm',
     patterns: [
       /eval\s*\(\s*(?:Buffer\.from|atob|Buffer\.alloc)/,
       /new\s+Function\s*\(\s*(?:Buffer\.from|atob)/,
@@ -201,5 +201,82 @@ export const supplyChainRules: FileRule[] = [
       /(?:webhook\.site|api\.github\.com\/gists)/,
     ],
     fileExtensions: ['.js', '.ts', '.cjs', '.mjs', '.py'],
+  },
+  {
+    id: 'SUPPLY_011',
+    title: 'Artefato de worm de supply chain (Shai-Hulud / ChainDrop)',
+    category: 'Supply Chain',
+    severity: 'critical',
+    confidence: 'high',
+    description:
+      'Presença de arquivo com nome usado pelos worms npm auto-propagantes (bundle.js com hook de install, setup_bun.js, bun_environment.js, setup.mjs, Math_Symbol.js, math_init.js, telemetry.js) ou de workflow/marcador característico dessas campanhas.',
+    impact:
+      'Esses droppers roubam tokens npm/GitHub, credenciais de nuvem (AWS/GCP/Azure), tokens de service account do Kubernetes e segredos do Vault, republicam pacotes infectados em nome do mantenedor e, em algumas variantes, apagam o diretório home se não conseguirem se propagar.',
+    attackScenarioDefensive:
+      'Um pacote comprometido roda o dropper no preinstall; antes mesmo de a instalação terminar ele baixa o runtime Bun, executa o stealer, exfiltra as credenciais do CI e publica versões maliciosas dos pacotes da organização.',
+    remediation:
+      'Trate como incidente: isole a máquina/runner, revogue e rotacione TODOS os tokens (npm, GitHub, nuvem, Vault), audite publicações recentes do seu escopo npm e reinstale as dependências a partir de um lockfile verificado. Habilite ignore-scripts=true no CI.',
+    safeExample:
+      '# .npmrc — impede execução de scripts de ciclo de vida na instalação\nignore-scripts=true\n# E instale com lockfile verificado:\n# npm ci --ignore-scripts',
+    testSuggestion:
+      'Faça grep por setup_bun.js, bun_environment.js, setup.mjs e math_init.js em node_modules e no repositório; nenhum deve existir.',
+    reference: 'OWASP A03:2025 - Software Supply Chain Failures; CWE-506',
+    patterns: [
+      /\b(?:setup_bun\.js|bun_environment\.js|math_init\.js|Math_Symbol\.js)\b/,
+      /"(?:pre|post)?install"\s*:\s*"[^"]*\bnode\s+(?:bundle\.js|setup_bun\.js|setup\.mjs|telemetry\.js)/,
+      /Shai-Hulud|shai-hulud|s1ngularity-repository/i,
+    ],
+    fileExtensions: ['.json', '.js', '.mjs', '.cjs', '.yml', '.yaml'],
+  },
+  {
+    id: 'SUPPLY_012',
+    title: 'Indicador de C2 de campanha de supply chain conhecida',
+    category: 'Supply Chain',
+    severity: 'critical',
+    confidence: 'high',
+    description:
+      'Referência a domínio/endereço de comando e controle associado a campanhas documentadas de comprometimento de pacotes npm.',
+    impact:
+      'A presença de um IoC de C2 no código ou nas dependências indica infecção ativa: o host está exfiltrando credenciais e pode receber comandos adicionais do atacante.',
+    attackScenarioDefensive:
+      'O payload embutido numa dependência chama o C2 poucos segundos após o npm install, envia as credenciais coletadas e se auto-remove, deixando um package.json limpo para dificultar a perícia.',
+    remediation:
+      'Considere a máquina comprometida. Bloqueie os domínios no egress, rotacione todas as credenciais que existiam no ambiente e investigue os logs de rede em busca de conexões anteriores para esses destinos.',
+    safeExample:
+      '# Bloqueie no firewall/proxy de egress e monitore tentativas de conexão.\n# Rotacione: tokens npm, PATs do GitHub, chaves de nuvem, segredos do CI.',
+    testSuggestion:
+      'Verifique os logs de egress do CI e das estações de desenvolvimento em busca de conexões para esses domínios nos últimos 90 dias.',
+    reference: 'OWASP A03:2025 - Software Supply Chain Failures; CWE-506',
+    patterns: [
+      /npmjs\.help|npnjs\.com|sfrclak\.com|npm-cache\.com|js-mirror\.com|pypi-get\.com|getsession\.org/i,
+      /142\.11\.206\.73|83\.142\.209\.194/,
+      /\bplain-crypto-js\b|\beasy-day-js\b/,
+    ],
+    fileExtensions: ['.js', '.ts', '.mjs', '.cjs', '.json', '.lock', '.yaml', '.yml'],
+  },
+  {
+    id: 'SUPPLY_013',
+    title: 'Código oculto por caracteres Unicode invisíveis',
+    category: 'Supply Chain',
+    severity: 'high',
+    confidence: 'medium',
+    description:
+      'Presença de caracteres de largura zero ou da Private Use Area (U+200B-U+200D, U+2060, U+E0000-U+E007F) fora de literais de texto — técnica usada pelo worm GlassWorm para tornar o payload literalmente invisível no editor e no diff.',
+    impact:
+      'O código malicioso não aparece na revisão: o mantenedor lê um arquivo aparentemente normal enquanto o interpretador executa instruções ocultas que roubam credenciais npm/GitHub e carteiras.',
+    attackScenarioDefensive:
+      'Um pull request aparentemente trivial é aprovado porque o diff parece inofensivo; os caracteres invisíveis carregam um payload que, ao rodar, instala proxy SOCKS e servidor VNC oculto na máquina.',
+    remediation:
+      'Rejeite caracteres invisíveis no lint/CI (regra de ESLint ou hook de pre-commit) e configure o editor para exibi-los. Reveja o histórico do arquivo sinalizado.',
+    safeExample:
+      "// Falhe o CI se houver caracteres invisiveis no fonte:\n// grep -PIl '[\\x{200B}-\\x{200D}\\x{2060}\\x{E0000}-\\x{E007F}]' -r src/ && exit 1",
+    testSuggestion:
+      'Rode o grep acima no repositório inteiro; nenhum arquivo de código deve casar.',
+    reference: 'OWASP A03:2025; CWE-506; GlassWorm (invisible Unicode)',
+    patterns: [
+      /[​-‍⁠﻿]{2,}/,
+      /[\uDB40][\uDC00-\uDC7F]/,
+    ],
+    fileExtensions: ['.js', '.ts', '.jsx', '.tsx', '.mjs', '.cjs', '.json'],
   },
 ];

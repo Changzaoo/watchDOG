@@ -60,6 +60,57 @@ const KNOWN_VULNERABLE_2026: Record<string, { minSafe: string; issue: string; se
   'picomatch': { minSafe: '4.0.3', issue: 'ReDoS em padrões glob maliciosos (CVE-2026-33671, 2026)', severity: 'medium' },
 };
 
+/**
+ * Versões EXATAS publicadas comprometidas em campanhas confirmadas de supply
+ * chain (não é "versão antiga com CVE" — é código malicioso publicado sob a
+ * versão). Qualquer uma destas no projeto deve ser tratada como incidente:
+ * remover, rotacionar credenciais e reinstalar a partir de lockfile limpo.
+ */
+const COMPROMISED_VERSIONS: Record<string, { versions: string[]; campaign: string }> = {
+  // "qix" maintainer phishing (2025-09-08) — clipper de carteira cripto no bundle
+  'chalk': { versions: ['5.6.1'], campaign: 'qix maintainer phishing (set/2025)' },
+  'debug': { versions: ['4.4.2'], campaign: 'qix maintainer phishing (set/2025)' },
+  'ansi-styles': { versions: ['6.2.2'], campaign: 'qix maintainer phishing (set/2025)' },
+  'ansi-regex': { versions: ['6.2.1'], campaign: 'qix maintainer phishing (set/2025)' },
+  'strip-ansi': { versions: ['7.1.1'], campaign: 'qix maintainer phishing (set/2025)' },
+  'wrap-ansi': { versions: ['9.0.1'], campaign: 'qix maintainer phishing (set/2025)' },
+  'supports-color': { versions: ['10.2.1'], campaign: 'qix maintainer phishing (set/2025)' },
+  'color-convert': { versions: ['3.1.1'], campaign: 'qix maintainer phishing (set/2025)' },
+  'color-name': { versions: ['2.0.1'], campaign: 'qix maintainer phishing (set/2025)' },
+  'color-string': { versions: ['2.1.1'], campaign: 'qix maintainer phishing (set/2025)' },
+  'slice-ansi': { versions: ['7.1.1'], campaign: 'qix maintainer phishing (set/2025)' },
+  'is-arrayish': { versions: ['0.3.3'], campaign: 'qix maintainer phishing (set/2025)' },
+  'error-ex': { versions: ['1.3.3'], campaign: 'qix maintainer phishing (set/2025)' },
+  // "Scavenger" phishing via npnjs.com (2025-07) — CVE-2025-54313
+  'eslint-config-prettier': { versions: ['8.10.1', '9.1.1', '10.1.6', '10.1.7'], campaign: 'Scavenger (CVE-2025-54313, jul/2025)' },
+  'eslint-plugin-prettier': { versions: ['4.2.2', '4.2.3'], campaign: 'Scavenger (jul/2025)' },
+  'synckit': { versions: ['0.11.9', '0.11.10'], campaign: 'Scavenger (jul/2025)' },
+  'napi-postinstall': { versions: ['0.3.1', '0.3.2'], campaign: 'Scavenger (jul/2025)' },
+  'is': { versions: ['3.3.1', '5.0.0'], campaign: 'Scavenger — RAT WebSocket (jul/2025)' },
+  // nx / s1ngularity (2025-08) — CVE-2025-10894
+  'nx': { versions: ['20.9.0', '20.10.0', '20.11.0', '20.12.0', '21.5.0', '21.6.0', '21.7.0', '21.8.0'], campaign: 's1ngularity (CVE-2025-10894, ago/2025)' },
+  // Shai-Hulud v1 (2025-09) — worm auto-propagante
+  '@ctrl/tinycolor': { versions: ['4.1.1', '4.1.2'], campaign: 'Shai-Hulud worm (set/2025)' },
+  'ngx-bootstrap': { versions: ['18.1.4', '19.0.3', '19.0.4', '20.0.3', '20.0.4', '20.0.5', '20.0.6'], campaign: 'Shai-Hulud worm (set/2025)' },
+  'ngx-toastr': { versions: ['19.0.1', '19.0.2'], campaign: 'Shai-Hulud worm (set/2025)' },
+  'angulartics2': { versions: ['14.1.1', '14.1.2'], campaign: 'Shai-Hulud worm (set/2025)' },
+  // rspack / vant (2024-12) — XMRig cryptominer
+  '@rspack/core': { versions: ['1.1.7'], campaign: 'XMRig miner (dez/2024)' },
+  '@rspack/cli': { versions: ['1.1.7'], campaign: 'XMRig miner (dez/2024)' },
+  // axios RAT (2026-03) — CISA
+  'axios': { versions: ['1.14.1', '0.30.4'], campaign: 'RAT Sapphire Sleet (mar/2026)' },
+  'plain-crypto-js': { versions: ['4.2.1'], campaign: 'dependencia fantasma — dropper de RAT (mar/2026)' },
+  // ChainDrop / keyv & cacheable (2026-08)
+  'keyv': { versions: ['6.0.0'], campaign: 'ChainDrop worm (ago/2026)' },
+  'flat-cache': { versions: ['6.1.24'], campaign: 'ChainDrop worm (ago/2026)' },
+  'file-entry-cache': { versions: ['11.1.6'], campaign: 'ChainDrop worm (ago/2026)' },
+  'cacheable-request': { versions: ['13.0.20'], campaign: 'ChainDrop worm (ago/2026)' },
+  'cacheable': { versions: ['2.5.1'], campaign: 'ChainDrop worm (ago/2026)' },
+  'cache-manager': { versions: ['7.2.10'], campaign: 'ChainDrop worm (ago/2026)' },
+  // Mastra / Sapphire Sleet (2026-06) — typosquat injetado como dependencia
+  'easy-day-js': { versions: ['*'], campaign: 'Mastra/Sapphire Sleet — typosquat de dayjs (jun/2026)' },
+};
+
 // Allowlist de pacotes populares para heurística de typosquat (Levenshtein <= 1).
 const POPULAR_PACKAGES = ['react', 'lodash', 'dayjs', 'axios', 'express', 'chalk', 'next', 'vue'];
 
@@ -226,6 +277,30 @@ export async function analyzeDependencies(projectPath: string): Promise<Dependen
           severity: vulnerable.severity,
         });
       }
+    }
+  }
+
+  // Versões comprometidas por campanha confirmada de supply chain.
+  // Diferente de "versão com CVE": aqui a versão publicada CONTÉM malware.
+  for (const [pkgName, version] of Object.entries(allDeps)) {
+    const entry = COMPROMISED_VERSIONS[pkgName];
+    if (!entry) continue;
+
+    // Versão declarada com range (^1.2.3) — comparamos o número base.
+    const cleanVersion = version.replace(/^[^0-9]*/, '').trim();
+    const atingido =
+      entry.versions.includes('*') || entry.versions.includes(cleanVersion);
+
+    if (atingido) {
+      issues.push({
+        package: pkgName,
+        version,
+        issue:
+          `VERSÃO COMPROMETIDA — ${entry.campaign}. Esta versão publicada contém código malicioso ` +
+          `(roubo de tokens npm/GitHub e credenciais de nuvem). Trate como incidente: remova a versão, ` +
+          `rotacione TODAS as credenciais do ambiente e reinstale a partir de um lockfile limpo.`,
+        severity: 'critical',
+      });
     }
   }
 

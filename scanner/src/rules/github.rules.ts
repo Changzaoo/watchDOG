@@ -10,7 +10,7 @@ export const githubRules: FileRule[] = [
     impact: 'Token exposto no repositório pode ser usado por qualquer pessoa com acesso ao código.',
     remediation: 'Use ${{ secrets.MY_SECRET }} para todos os secrets em workflows.',
     safeExample: "- name: Deploy\n  env:\n    API_KEY: ${{ secrets.API_KEY }}\n  run: deploy.sh",
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /(?:TOKEN|KEY|SECRET|PASSWORD)\s*=\s*["']?[A-Za-z0-9+\/=_\-]{16,}(?!\s*\$\{\{)/,
     ],
@@ -55,7 +55,7 @@ export const githubRules: FileRule[] = [
     impact: 'Se o recurso remoto for comprometido, código malicioso é executado no CI/CD.',
     remediation: 'Verifique a integridade com checksum antes de executar. Prefira actions específicas.',
     safeExample: "# Em vez de: curl -s https://... | bash\n# Faça:\ncurl -s https://... -o script.sh\nsha256sum -c expected.sha256\nbash script.sh",
-    reference: 'OWASP A08:2021 - Software and Data Integrity Failures',
+    reference: 'OWASP A08:2025 - Software and Data Integrity Failures',
     patterns: [
       /curl[^|]+\|\s*(?:bash|sh)/,
     ],
@@ -70,7 +70,7 @@ export const githubRules: FileRule[] = [
     impact: 'Versões de dependências podem mudar entre builds, introduzindo supply chain attacks.',
     remediation: 'Use npm ci em vez de npm install em CI/CD.',
     safeExample: "- name: Install dependencies\n  run: npm ci --prefer-offline",
-    reference: 'OWASP A08:2021 - Software and Data Integrity Failures',
+    reference: 'OWASP A08:2025 - Software and Data Integrity Failures',
     patterns: [
       /run\s*:\s*npm\s+install(?!\s+--)/,
     ],

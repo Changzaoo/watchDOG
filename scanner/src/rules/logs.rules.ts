@@ -10,7 +10,7 @@ export const logsRules: FileRule[] = [
     impact: 'Tokens aparecem em arquivos de log, sistemas de monitoramento, e são visíveis em ambientes compartilhados.',
     remediation: 'Nunca logue tokens. Se precisar debugar, logue apenas parte mascarada.',
     safeExample: '// Em vez de: console.log(token);\nconsole.log("Token length:", token?.length); // mascarado',
-    reference: 'OWASP A09:2021 - Security Logging and Monitoring Failures',
+    reference: 'OWASP A09:2025 - Security Logging and Alerting Failures',
     patterns: [
       /console\.log\([^)]*(?:token|jwt|bearer|authorization)[^)]*\)/i,
     ],
@@ -25,7 +25,7 @@ export const logsRules: FileRule[] = [
     impact: 'Senhas aparecem em texto puro em logs, comprometendo todos os usuários afetados.',
     remediation: 'Nunca logue campos de senha. Remova-os do objeto antes de logar.',
     safeExample: "const { password, ...safeUser } = req.body;\nconsole.log('User data:', safeUser); // sem senha",
-    reference: 'OWASP A09:2021 - Security Logging and Monitoring Failures',
+    reference: 'OWASP A09:2025 - Security Logging and Alerting Failures',
     patterns: [
       /console\.(?:log|info|warn|error)\([^)]*(?:password|senha|passwd|pwd)[^)]*\)/i,
       /logger\.[a-z]+\([^)]*(?:password|senha|passwd)[^)]*\)/i,
@@ -41,7 +41,7 @@ export const logsRules: FileRule[] = [
     impact: 'Tokens de acesso aparecem em logs e podem ser usados para impersonar usuários.',
     remediation: 'Filtre headers sensíveis antes de logar. Nunca logue Authorization.',
     safeExample: "const safeHeaders = { ...req.headers };\ndelete safeHeaders.authorization;\nconsole.log('Request headers:', safeHeaders);",
-    reference: 'OWASP A09:2021 - Security Logging and Monitoring Failures',
+    reference: 'OWASP A09:2025 - Security Logging and Alerting Failures',
     patterns: [
       /console\.log\([^)]*(?:headers|req\.headers)[^)]*\)/i,
       /console\.log\([^)]*authorization[^)]*\)/i,
@@ -72,7 +72,7 @@ export const logsRules: FileRule[] = [
     impact: 'Revela estrutura interna, versões, caminhos de arquivo para atacantes.',
     remediation: 'Em produção, retorne mensagens genéricas. Logue internamente com stack trace.',
     safeExample: "app.use((err, req, res, next) => {\n  logger.error(err); // log completo internamente\n  res.status(500).json({ error: 'Internal server error' }); // genérico para o cliente\n});",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /res\.(?:json|send)\s*\(\s*(?:err|error)\.stack/i,
     ],

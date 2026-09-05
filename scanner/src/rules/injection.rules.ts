@@ -13,7 +13,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Use execFile/spawn com array de argumentos (sem shell) e valide o input contra uma allowlist.',
     safeExample: "const { execFile } = require('child_process');\nexecFile('git', ['clone', repoUrl], cb); // sem shell, args separados",
     testSuggestion: 'Enviar payload com ; e && em um campo interpolado e confirmar que não há execução de comandos extras.',
-    reference: 'OWASP A03:2021; CWE-78; CVE-2026-47367',
+    reference: 'OWASP A05:2025; CWE-78; CVE-2026-47367',
     patterns: [
       /\b(?:child_process\.)?(?:exec|execSync)\s*\(\s*`[^`]*\$\{/,
       /\b(?:child_process\.)?(?:exec|execSync)\s*\([^)]*["'`]\s*\+\s*[A-Za-z_$]/,
@@ -32,7 +32,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Use subprocess.run com lista de argumentos e shell=False (padrão). Nunca monte o comando por concatenação/f-string.',
     safeExample: "import subprocess\nsubprocess.run(['git', 'clone', repo_url], shell=False, check=True)",
     testSuggestion: 'Enviar payload com ; $() e && em um campo que chega ao comando e confirmar que não há execução extra.',
-    reference: 'OWASP A03:2021; CWE-78',
+    reference: 'OWASP A05:2025; CWE-78',
     patterns: [
       /\bos\.(?:system|popen)\s*\(\s*f["']/,
       /\bos\.(?:system|popen)\s*\([^)]*["']\s*\+/,
@@ -52,7 +52,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Em PHP, use escapeshellarg/escapeshellcmd ou evite shell. Em Java, use ProcessBuilder com lista de argumentos, sem shell.',
     safeExample: "// Java seguro:\nnew ProcessBuilder(\"git\", \"clone\", repoUrl).start();\n// PHP seguro:\n$out = shell_exec('ls ' . escapeshellarg($dir));",
     testSuggestion: 'Injetar ; e | em variáveis que alcançam o comando e confirmar que não há execução adicional.',
-    reference: 'OWASP A03:2021; CWE-78',
+    reference: 'OWASP A05:2025; CWE-78',
     patterns: [
       /\b(?:shell_exec|passthru|system|popen)\s*\(\s*[^)]*\$[A-Za-z_]/,
       /\bRuntime\.getRuntime\(\)\.exec\s*\([^)]*\+/,
@@ -71,7 +71,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Nunca compile templates a partir de input do usuário. Trate o input apenas como dado passado ao contexto de um template fixo.',
     safeExample: "const html = pug.renderFile('view.pug', { nome: req.body.nome }); // template fixo, input como dado",
     testSuggestion: 'Enviar payloads de SSTI específicos da engine (ex.: {{7*7}}, #{...}) e verificar se não são avaliados.',
-    reference: 'OWASP A03:2021; CWE-1336',
+    reference: 'OWASP A05:2025; CWE-1336',
     patterns: [
       /\b(?:pug|handlebars|ejs|nunjucks|_)\.(?:compile|render|template)\s*\([^)]*(?:req\.|body\.|params\.|query\.)/,
       /\bnunjucks\.renderString\s*\([^)]*(?:req\.|body\.|params\.|query\.)/,
@@ -90,7 +90,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Use render_template com arquivos de template fixos e passe o input do usuário apenas como variável de contexto.',
     safeExample: "from flask import render_template\nreturn render_template('hello.html', nome=request.args.get('nome'))",
     testSuggestion: 'Enviar {{7*7}} e {{config}} e confirmar que aparecem literalmente, sem avaliação.',
-    reference: 'OWASP A03:2021; CWE-1336',
+    reference: 'OWASP A05:2025; CWE-1336',
     patterns: [
       /\brender_template_string\s*\(\s*[^)]*(?:f["']|%|\.format\(|\+)/,
       /\bTemplate\s*\(\s*[^)]*(?:f["']|request\.|\.format\(|\+)/,
@@ -109,7 +109,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Valide e converta os tipos do input. Nunca passe objetos do usuário diretamente como filtro; use $eq explícito e schemas (ex.: mongoose).',
     safeExample: "const user = await User.findOne({ email: String(req.body.email) }); // tipo forçado a string",
     testSuggestion: 'Enviar operadores como {"$ne":null} ou {"$gt":""} nos campos e confirmar que são rejeitados/tratados como string.',
-    reference: 'OWASP A03:2021; CWE-943',
+    reference: 'OWASP A05:2025; CWE-943',
     patterns: [
       /\$where\s*:\s*[`"']?[^,}]*\$\{/,
       /\.(?:find|findOne|update(?:One|Many)?|delete(?:One|Many)?)\s*\(\s*(?:req\.body|req\.query|req\.params)\b/,
@@ -128,7 +128,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Use merge seguro que ignore __proto__/constructor/prototype, ou Object.create(null). Atualize libs vulneráveis (lodash).',
     safeExample: "// Bloqueie chaves perigosas antes de mesclar:\nif (['__proto__','constructor','prototype'].includes(key)) continue;",
     testSuggestion: 'Enviar {"__proto__":{"polluted":true}} e verificar que ({}).polluted continua undefined.',
-    reference: 'OWASP A08:2021; CWE-1321',
+    reference: 'OWASP A08:2025; CWE-1321',
     patterns: [
       /\b(?:_\.(?:merge|mergeWith|defaultsDeep|set)|deepmerge|extend)\s*\([^)]*(?:req\.body|req\.query|req\.params)\b/,
       /\bObject\.assign\s*\(\s*[A-Za-z_$][\w$]*\s*,\s*(?:req\.body|req\.query|JSON\.parse)/,
@@ -147,7 +147,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Valide a chave contra uma allowlist e rejeite __proto__/constructor/prototype. Prefira Map em vez de objeto literal.',
     safeExample: "if (['__proto__','constructor','prototype'].includes(key)) return;\nobj[key] = value;",
     testSuggestion: 'Definir key="__proto__" e confirmar que a escrita é bloqueada e o protótipo permanece intacto.',
-    reference: 'OWASP A08:2021; CWE-1321',
+    reference: 'OWASP A08:2025; CWE-1321',
     patterns: [
       /\[\s*(?:req\.|body\.|params\.|query\.|key|prop|path)[^\]]*\]\s*\[\s*["'`]__proto__["'`]\s*\]/,
       /\[\s*(?:key|prop|k|path|segment)\s*\]\s*=\s*(?!.*hasOwnProperty)/,
@@ -166,7 +166,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Não use node-serialize para dados não confiáveis. Use JSON.parse para dados e nunca desserialize código.',
     safeExample: "const data = JSON.parse(input); // apenas dados, nunca funções",
     testSuggestion: 'Enviar payload com _$$ND_FUNC$$_ e confirmar que não há execução (idealmente, remover a dependência).',
-    reference: 'OWASP A08:2021; CWE-502',
+    reference: 'OWASP A08:2025; CWE-502',
     patterns: [
       /require\(\s*["'`]node-serialize["'`]\s*\)/,
       /\bserialize\.unserialize\s*\(/,
@@ -185,7 +185,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Nunca desserialize dados não confiáveis com pickle. Use yaml.safe_load. Para dados, prefira JSON.',
     safeExample: "import yaml\ndata = yaml.safe_load(untrusted_input) # nunca yaml.load sem SafeLoader",
     testSuggestion: 'Enviar payload pickle/YAML com __reduce__ ou !!python/object e confirmar que é rejeitado.',
-    reference: 'OWASP A08:2021; CWE-502',
+    reference: 'OWASP A08:2025; CWE-502',
     patterns: [
       /\bpickle\.(?:load|loads)\s*\(/,
       /\byaml\.load\s*\([^)]*\)(?![^)]*Loader\s*=)/,
@@ -204,7 +204,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Não desserialize dados não confiáveis. Em PHP use JSON; em Java, use formatos seguros e listas de classes permitidas (ObjectInputFilter).',
     safeExample: "// PHP: use JSON em vez de unserialize\n$data = json_decode($input, true);",
     testSuggestion: 'Fornecer payload de gadget conhecido e confirmar que a desserialização é bloqueada ou filtrada.',
-    reference: 'OWASP A08:2021; CWE-502',
+    reference: 'OWASP A08:2025; CWE-502',
     patterns: [
       /\bunserialize\s*\(\s*\$[A-Za-z_]/,
       /new\s+ObjectInputStream\s*\(/,
@@ -223,7 +223,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Desabilite DTD e entidades externas: setFeature("http://apache.org/xml/features/disallow-doctype-decl", true) em Java; não use LIBXML_NOENT.',
     safeExample: "DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();\ndbf.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true);",
     testSuggestion: 'Enviar XML com entidade externa apontando para file:// e confirmar que não é resolvida.',
-    reference: 'OWASP A05:2021; CWE-611',
+    reference: 'OWASP A02:2025; CWE-611',
     patterns: [
       /\b(?:DocumentBuilderFactory|SAXParserFactory|XMLInputFactory)\.newInstance\s*\(/,
       /\bLIBXML_NOENT\b/,
@@ -243,7 +243,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Normalize com path.resolve e verifique que o caminho final está dentro do diretório base; use basename e uma allowlist.',
     safeExample: "const safe = path.resolve(BASE, path.basename(req.params.file));\nif (!safe.startsWith(BASE)) return res.sendStatus(400);",
     testSuggestion: 'Enviar "../" e "..%2f" no parâmetro e confirmar que o acesso fica restrito ao diretório base.',
-    reference: 'OWASP A01:2021; CWE-22',
+    reference: 'OWASP A01:2025; CWE-22',
     patterns: [
       /\bfs\.(?:readFile|readFileSync|createReadStream|writeFile|writeFileSync|unlink)\s*\([^)]*(?:req\.params|req\.query|req\.body)\b/,
       /\b(?:res\.sendFile|path\.join)\s*\([^)]*(?:req\.params|req\.query|req\.body)\b/,
@@ -262,7 +262,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Use os.path.basename e valide o caminho resolvido (os.path.realpath) contra um diretório base permitido.',
     safeExample: "import os\nbase = '/app/uploads'\npath = os.path.realpath(os.path.join(base, os.path.basename(request.args['f'])))\nif not path.startswith(base): abort(400)",
     testSuggestion: 'Enviar "../" e caminhos absolutos no parâmetro e confirmar que o acesso fica restrito ao diretório base.',
-    reference: 'OWASP A01:2021; CWE-22',
+    reference: 'OWASP A01:2025; CWE-22',
     patterns: [
       /\bopen\s*\(\s*[^)]*request\.(?:args|form|json|values|files)\b/,
       /\bos\.path\.join\s*\([^)]*request\.(?:args|form|json|values)\b/,
@@ -281,7 +281,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Passe sempre uma função (não string) para timers. Não use o módulo vm com input não confiável; use sandboxes isoladas de processo se necessário.',
     safeExample: "setTimeout(() => doWork(value), 1000); // função, nunca string",
     testSuggestion: 'Injetar payload em campos que chegam a timers/vm e confirmar que não há avaliação de código.',
-    reference: 'OWASP A03:2021; CWE-95',
+    reference: 'OWASP A05:2025; CWE-95',
     patterns: [
       /\b(?:setTimeout|setInterval)\s*\(\s*["'`][^"'`]*\$\{/,
       /\bvm\.(?:runInNewContext|runInThisContext|compileFunction)\s*\([^)]*(?:req\.|body\.|params\.|query\.)/,
@@ -300,7 +300,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Valide o destino contra uma allowlist de URLs/paths internos. Permita apenas caminhos relativos que comecem com "/".',
     safeExample: "const next = req.query.next;\nif (typeof next === 'string' && next.startsWith('/') && !next.startsWith('//')) res.redirect(next);\nelse res.redirect('/');",
     testSuggestion: 'Enviar URLs absolutas externas e //evil.com no parâmetro e confirmar que o redirecionamento é bloqueado.',
-    reference: 'OWASP A01:2021; CWE-601',
+    reference: 'OWASP A01:2025; CWE-601',
     patterns: [
       /\bres\.redirect\s*\(\s*(?:req\.query|req\.body|req\.params)\b/,
       /\bres\.redirect\s*\([^)]*(?:req\.query|req\.body|req\.params)\.[A-Za-z_]/,
@@ -319,7 +319,7 @@ export const injectionRules: FileRule[] = [
     remediation: 'Use sempre queries parametrizadas / placeholders, ou os helpers seguros do ORM. Nunca concatene input na string SQL.',
     safeExample: "// Parametrizado:\nawait db.query('SELECT * FROM users WHERE id = $1', [userId]);\n# Python:\ncursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))",
     testSuggestion: "Enviar payloads como ' OR '1'='1 e \"; DROP TABLE-- e confirmar que são tratados como dados literais.",
-    reference: 'OWASP A03:2021; CWE-89',
+    reference: 'OWASP A05:2025; CWE-89',
     patterns: [
       /(?:query|execute|raw)\s*\(\s*[`"'][^`"']*(?:SELECT|INSERT|UPDATE|DELETE)[\s\S]{0,200}?(?:\$\{[^}]*(?:req\.|input|userId|params)|["']\s*\+\s*(?:req\.|input))/i,
     ],

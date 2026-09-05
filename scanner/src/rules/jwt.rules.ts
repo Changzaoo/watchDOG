@@ -13,7 +13,7 @@ export const jwtRules: FileRule[] = [
     remediation: 'Sempre passe algorithms com a lista fixa esperada (ex.: ["RS256"]) na opção de jwt.verify.',
     safeExample: "jwt.verify(token, publicKey, { algorithms: ['RS256'] });",
     testSuggestion: 'Forjar token com alg:none e com HS256 usando a chave pública e confirmar que ambos são rejeitados.',
-    reference: 'OWASP A02:2021; CWE-347',
+    reference: 'OWASP A04:2025; CWE-347',
     patterns: [
       /jwt\.verify\s*\(\s*[^,]+,\s*[^,)]+\)/,
       /jwt\.verify\s*\([^)]*\)(?![^;]*algorithms)/,
@@ -32,7 +32,7 @@ export const jwtRules: FileRule[] = [
     remediation: 'Nunca permita o algoritmo "none". Restrinja a verificação a algoritmos com assinatura forte (RS256/ES256/HS256).',
     safeExample: "jwt.verify(token, key, { algorithms: ['RS256'] }); // 'none' jamais incluído",
     testSuggestion: 'Enviar token com alg:none e confirmar rejeição imediata.',
-    reference: 'OWASP A02:2021; CWE-347',
+    reference: 'OWASP A04:2025; CWE-347',
     patterns: [
       /algorithms\s*:\s*\[[^\]]*["'`]none["'`]/i,
       /\balg(?:orithm)?\s*[:=]\s*["'`]none["'`]/i,
@@ -51,7 +51,7 @@ export const jwtRules: FileRule[] = [
     remediation: 'Use jwt.verify (com chave e algorithms) para qualquer decisão de segurança. Reserve decode apenas para inspeção sem confiança.',
     safeExample: "const payload = jwt.verify(token, key, { algorithms: ['RS256'] }); // verifica assinatura",
     testSuggestion: 'Enviar token com assinatura inválida e confirmar que o acesso é negado.',
-    reference: 'OWASP A02:2021; CWE-347',
+    reference: 'OWASP A04:2025; CWE-347',
     patterns: [
       /jwt\.decode\s*\(/,
       /(?:jsonwebtoken|jose)[\s\S]{0,80}\bdecode\s*\(/,
@@ -70,7 +70,7 @@ export const jwtRules: FileRule[] = [
     remediation: 'Use um segredo aleatório longo (>=32 bytes) carregado de variável de ambiente / cofre de segredos, nunca hardcoded.',
     safeExample: "const secret = process.env.JWT_SECRET; // valor aleatório forte fora do código\njwt.sign(payload, secret, { algorithm: 'HS256', expiresIn: '15m' });",
     testSuggestion: 'Tentar assinar/verificar tokens com segredos comuns de wordlist e confirmar que falham.',
-    reference: 'OWASP A02:2021; CWE-321',
+    reference: 'OWASP A04:2025; CWE-321',
     patterns: [
       /jwt\.sign\s*\([^,]+,\s*["'`][^"'`]{1,15}["'`]/,
       /(?:JWT_SECRET|jwtSecret|secret)\s*[:=]\s*["'`](?:secret|changeme|password|test|123456|key)["'`]/i,
@@ -89,7 +89,7 @@ export const jwtRules: FileRule[] = [
     remediation: 'Trate kid como identificador opaco e valide contra um conjunto fixo de chaves (allowlist). Nunca o use em caminhos de arquivo ou queries sem sanitização.',
     safeExample: "const key = KEYS[header.kid]; // lookup em mapa fixo\nif (!key) return reject();",
     testSuggestion: 'Enviar kid com sequências ../ e payloads SQL e confirmar que são rejeitados.',
-    reference: 'OWASP A02:2021; CWE-347',
+    reference: 'OWASP A04:2025; CWE-347',
     patterns: [
       /(?:header|decoded|payload)\.kid\b[\s\S]{0,60}(?:readFileSync|join\s*\(|`[^`]*\$\{)/,
       /(?:SELECT|WHERE)[\s\S]{0,80}\bkid\b/i,
@@ -108,7 +108,7 @@ export const jwtRules: FileRule[] = [
     remediation: 'Remova ignoreExpiration (ou deixe false) para que exp seja validado, e defina expiresIn curto na emissão.',
     safeExample: "jwt.verify(token, key, { algorithms: ['RS256'] }); // exp é validado por padrão",
     testSuggestion: 'Verificar um token com exp no passado e confirmar que é rejeitado.',
-    reference: 'OWASP A02:2021; CWE-613',
+    reference: 'OWASP A04:2025; CWE-613',
     patterns: [
       /ignoreExpiration\s*:\s*true/i,
     ],

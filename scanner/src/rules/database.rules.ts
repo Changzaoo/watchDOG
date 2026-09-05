@@ -10,7 +10,7 @@ export const databaseRules: FileRule[] = [
     impact: 'Acesso direto ao banco de dados.',
     remediation: 'Use variável de ambiente para armazenar a URI de conexão.',
     safeExample: 'const uri = process.env.MONGODB_URI;',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /mongodb(?:\+srv)?:\/\/[^"'\s]+:[^"'\s]+@[^"'\s]+/i,
     ],
@@ -25,7 +25,7 @@ export const databaseRules: FileRule[] = [
     impact: 'Acesso não autorizado ao cache/sessões. Possível RCE via Redis eval em versões antigas.',
     remediation: 'Configure senha no Redis (requirepass). Restrinja acesso por IP/firewall.',
     safeExample: 'const redis = new Redis({ host: "localhost", port: 6379, password: process.env.REDIS_PASSWORD });',
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /new\s+Redis\s*\(\s*\{\s*host\s*:[^}]*\}\s*\)(?!.*password)/s,
       /redis:\/\/(?!:)[^@"\s]+/,
@@ -41,7 +41,7 @@ export const databaseRules: FileRule[] = [
     impact: 'Service key tem acesso de admin ao banco, bypassando RLS.',
     remediation: 'Use apenas a anon key no frontend. A service key deve ficar apenas no backend.',
     safeExample: '// Frontend: use apenas SUPABASE_ANON_KEY\n// Backend: use SUPABASE_SERVICE_ROLE_KEY em variável de ambiente',
-    reference: 'OWASP A01:2021 - Broken Access Control',
+    reference: 'OWASP A01:2025 - Broken Access Control',
     patterns: [
       /SUPABASE_SERVICE(?:_ROLE)?_KEY\s*=\s*["'`]?ey[A-Za-z0-9]+/,
       /service_role[^a-z].*["'`]ey[A-Za-z0-9]+/i,
@@ -57,7 +57,7 @@ export const databaseRules: FileRule[] = [
     impact: 'Qualquer pessoa pode ler e escrever no banco de dados sem autenticação.',
     remediation: 'Configure rules específicas com autenticação e ownership.',
     safeExample: 'rules_version = \'2\';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if request.auth != null;\n    }\n  }\n}',
-    reference: 'OWASP A01:2021 - Broken Access Control',
+    reference: 'OWASP A01:2025 - Broken Access Control',
     patterns: [
       /allow\s+read,\s*write\s*:\s*if\s+true/,
       /allow\s+read,\s*write/,
@@ -73,7 +73,7 @@ export const databaseRules: FileRule[] = [
     impact: 'Dados em trânsito podem ser interceptados (man-in-the-middle).',
     remediation: 'Configure SSL nas conexões de banco em produção.',
     safeExample: "const db = new Pool({\n  connectionString: process.env.DATABASE_URL,\n  ssl: { rejectUnauthorized: true }\n});",
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /ssl\s*:\s*false/i,
       /sslmode\s*=\s*disable/i,
@@ -89,7 +89,7 @@ export const databaseRules: FileRule[] = [
     impact: 'Dados sensíveis versionados e acessíveis a todos com acesso ao repositório.',
     remediation: 'Nunca inclua dados sensíveis em migrations. Use seeds separados e seguros.',
     safeExample: '// Seeds em scripts separados, não em migrations:\n// Não inclua senhas reais em migrations.',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /(?:INSERT INTO|VALUES)\s*\([^)]*(?:password|secret|token)[^)]*\)/i,
     ],

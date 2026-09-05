@@ -69,7 +69,7 @@ export const webhookRules: FileRule[] = [
       "// 1) valida assinatura -> 2) confirma na fonte oficial -> 3) concede\nconst event = verifyWebhook(req); // lança se inválido\nconst pago = await provider.payments.retrieve(event.data.id); // fonte de verdade\nif (pago.status === 'paid') {\n  await ativarAssinatura(pago.customerId, { idempotencyKey: event.id });\n}",
     testSuggestion:
       'Envie um webhook forjado com status="approved" sem assinatura válida e confirme que nenhuma assinatura/entitlement é ativada.',
-    reference: 'OWASP A04:2021 - Insecure Design; CWE-807 (Reliance on Untrusted Inputs in a Security Decision)',
+    reference: 'OWASP A06:2025 - Insecure Design; CWE-807 (Reliance on Untrusted Inputs in a Security Decision)',
     requireContent:
       /webhook|assinatura|subscription|premium|\bpro\b|plano|entitle|is_?active|upgrade|billing/i,
     patterns: [
@@ -150,7 +150,7 @@ export const webhookRules: FileRule[] = [
       "const jaProcessado = await db.webhookEvent.findUnique({ where: { eventId: event.id } });\nif (jaProcessado) return res.status(200).end(); // idempotente\nawait db.webhookEvent.create({ data: { eventId: event.id } });\nawait aplicarEfeito(event);",
     testSuggestion:
       'Reenvie o mesmo evento de webhook duas vezes e confirme que o efeito (crédito/plano) é aplicado apenas uma vez.',
-    reference: 'OWASP A04:2021 - Insecure Design; CWE-294 (Authentication Bypass by Capture-replay)',
+    reference: 'OWASP A06:2025 - Insecure Design; CWE-294 (Authentication Bypass by Capture-replay)',
     requireContent:
       /webhook|hook|stripe|kirvano|cacto|hotmart|kiwify|mercadopago|pagarme/i,
     patterns: [
@@ -177,7 +177,7 @@ export const webhookRules: FileRule[] = [
       "const a = Buffer.from(assinaturaCalculada);\nconst b = Buffer.from(req.headers['x-signature'] || '');\nif (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.status(401).end();",
     testSuggestion:
       'Revise o handler e confirme que a comparação de assinatura usa timingSafeEqual e não == / ===.',
-    reference: 'CWE-208 (Observable Timing Discrepancy); OWASP A02:2021',
+    reference: 'CWE-208 (Observable Timing Discrepancy); OWASP A04:2025',
     requireContent: /signature|assinatura|hmac|webhook/i,
     patterns: [
       /(?:signature|assinatura|hmac|digest|hash)\s*(?:===?|==)\s*(?:req|request|headers)\.[A-Za-z0-9_.\[\]'"`-]+/i,

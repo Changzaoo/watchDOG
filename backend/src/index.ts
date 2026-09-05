@@ -190,7 +190,7 @@ app.use('/api/rules', rulesRouter);
 app.get('/health', (req, res) => {
   const health: Record<string, unknown> = {
     status: 'ok',
-    version: '1.0.0',
+    version: '1.1.0',
     localScansEnabled: areLocalScansEnabledForRequest(req),
     timestamp: new Date().toISOString(),
   };

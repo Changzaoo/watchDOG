@@ -10,7 +10,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Sem HSTS, usuários podem ser forçados a conexões HTTP inseguras (SSL stripping).',
     remediation: 'Adicione HSTS com max-age de pelo menos 1 ano e includeSubDomains.',
     safeExample: 'Strict-Transport-Security: max-age=31536000; includeSubDomains; preload',
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (headers) => !headers['strict-transport-security'],
   },
   {
@@ -22,7 +22,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Sem CSP, ataques XSS podem executar scripts de qualquer origem.',
     remediation: 'Configure uma CSP restritiva. Comece com default-src \'self\'.',
     safeExample: "Content-Security-Policy: default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'",
-    reference: 'OWASP A03:2021 - Injection (XSS)',
+    reference: 'OWASP A05:2025 - Injection (XSS)',
     check: (headers) => !headers['content-security-policy'],
   },
   {
@@ -34,7 +34,7 @@ export const headersRules: HttpRule[] = [
     impact: 'A página pode ser embutida em iframes de outros sites (Clickjacking).',
     remediation: 'Adicione X-Frame-Options: DENY ou SAMEORIGIN.',
     safeExample: 'X-Frame-Options: DENY',
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (headers) => !headers['x-frame-options'] && !headers['content-security-policy']?.includes('frame-ancestors'),
   },
   {
@@ -46,7 +46,7 @@ export const headersRules: HttpRule[] = [
     impact: 'O navegador pode fazer MIME type sniffing e executar arquivos com tipo errado.',
     remediation: 'Adicione X-Content-Type-Options: nosniff.',
     safeExample: 'X-Content-Type-Options: nosniff',
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (headers) => headers['x-content-type-options'] !== 'nosniff',
   },
   {
@@ -58,7 +58,7 @@ export const headersRules: HttpRule[] = [
     impact: 'URLs com dados sensíveis podem ser vazados via header Referer para sites terceiros.',
     remediation: 'Configure Referrer-Policy: strict-origin-when-cross-origin ou no-referrer.',
     safeExample: 'Referrer-Policy: strict-origin-when-cross-origin',
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (headers) => !headers['referrer-policy'],
   },
   {
@@ -70,7 +70,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Informação útil para atacantes na fase de reconhecimento.',
     remediation: 'Remova o header X-Powered-By ou substitua por valor neutro.',
     safeExample: "app.disable('x-powered-by'); // Express\n// ou via Helmet: helmet() remove automaticamente",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (headers) => !!headers['x-powered-by'],
   },
   {
@@ -82,7 +82,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Permite identificação de versões vulneráveis específicas.',
     remediation: 'Configure o servidor para não expor a versão no header Server.',
     safeExample: '# nginx.conf:\nserver_tokens off;\n# Apache:\nServerTokens Prod\nServerSignature Off',
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (headers) => {
       const server = headers['server'] || '';
       return /\d+\.\d+/.test(server);
@@ -97,7 +97,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Sem restrição de features do navegador: câmera, microfone, geolocalização podem ser acessados por iframes.',
     remediation: 'Configure Permissions-Policy para restringir features não utilizadas.',
     safeExample: "Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=()",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (headers) => !headers['permissions-policy'],
   },
   {
@@ -109,7 +109,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Configuração inválida que pode levar a comportamento inesperado ou vulnerabilidades em algumas versões de browsers.',
     remediation: 'Nunca combine Allow-Origin: * com Allow-Credentials: true. Use origens específicas.',
     safeExample: 'Access-Control-Allow-Origin: https://meuapp.com\nAccess-Control-Allow-Credentials: true',
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (headers) =>
       headers['access-control-allow-origin'] === '*' &&
       headers['access-control-allow-credentials'] === 'true',
@@ -123,7 +123,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Sem HttpOnly, o cookie fica acessível via document.cookie no JavaScript. Um XSS consegue ler o token de sessão e sequestrar a conta do usuário.',
     remediation: 'Defina todos os cookies de sessão/autenticação com a flag HttpOnly para que não sejam acessíveis por scripts do lado do cliente.',
     safeExample: 'Set-Cookie: session=abc123; HttpOnly; Secure; SameSite=Strict; Path=/',
-    reference: 'OWASP A05:2021 - Security Misconfiguration (Session Management)',
+    reference: 'OWASP A02:2025 - Security Misconfiguration (Session Management)',
     check: (h) => {
       const sc = (h['set-cookie'] || '').toLowerCase();
       if (!sc) return false;
@@ -139,7 +139,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Sem a flag Secure, o cookie pode ser enviado em conexões HTTP não criptografadas, permitindo interceptação do token de sessão por um atacante na rede (MITM/SSL stripping).',
     remediation: 'Adicione a flag Secure a todos os cookies sensíveis para que sejam transmitidos apenas via HTTPS.',
     safeExample: 'Set-Cookie: session=abc123; HttpOnly; Secure; SameSite=Strict; Path=/',
-    reference: 'OWASP A05:2021 - Security Misconfiguration (Session Management)',
+    reference: 'OWASP A02:2025 - Security Misconfiguration (Session Management)',
     check: (h) => {
       const sc = (h['set-cookie'] || '').toLowerCase();
       if (!sc) return false;
@@ -155,7 +155,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Sem SameSite, o cookie é enviado em requisições cross-site, abrindo espaço para ataques CSRF. SameSite=None sem Secure é rejeitado por navegadores modernos e expõe o cookie em conexões inseguras.',
     remediation: 'Defina SameSite=Strict ou SameSite=Lax para cookies de sessão. Use SameSite=None somente quando necessário e sempre acompanhado de Secure.',
     safeExample: 'Set-Cookie: session=abc123; HttpOnly; Secure; SameSite=Lax; Path=/',
-    reference: 'OWASP A01:2021 - Broken Access Control (CSRF)',
+    reference: 'OWASP A01:2025 - Broken Access Control (CSRF)',
     check: (h) => {
       const sc = (h['set-cookie'] || '').toLowerCase();
       if (!sc) return false;
@@ -172,7 +172,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Uma CSP fraca falha em mitigar XSS: scripts inline ou de origens arbitrárias ainda podem ser executados, anulando o propósito principal da política.',
     remediation: "Remova 'unsafe-inline' e 'unsafe-eval'. Use nonces ou hashes para scripts inline necessários e restrinja script-src/default-src a 'self' e origens confiáveis específicas.",
     safeExample: "Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-r4nd0m'; object-src 'none'; base-uri 'self'",
-    reference: 'OWASP A03:2021 - Injection (XSS)',
+    reference: 'OWASP A05:2025 - Injection (XSS)',
     check: (h) => {
       const csp = (h['content-security-policy'] || '').toLowerCase();
       if (!csp) return false;
@@ -192,7 +192,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Um max-age curto encurta a janela de proteção contra SSL stripping; sem includeSubDomains, subdomínios permanecem vulneráveis a downgrade de conexão.',
     remediation: 'Configure HSTS com max-age de pelo menos 1 ano e inclua includeSubDomains (e preload, se elegível).',
     safeExample: 'Strict-Transport-Security: max-age=31536000; includeSubDomains; preload',
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (h) => {
       const v = (h['strict-transport-security'] || '').toLowerCase();
       if (!v) return false;
@@ -210,7 +210,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Sem COOP, a janela pode compartilhar o browsing context group com janelas cross-origin, facilitando ataques de side-channel (Spectre) e cross-window scripting.',
     remediation: 'Defina Cross-Origin-Opener-Policy: same-origin para isolar o browsing context.',
     safeExample: 'Cross-Origin-Opener-Policy: same-origin',
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (h) => {
       const v = (h['cross-origin-opener-policy'] || '').toLowerCase();
       return v !== 'same-origin' && v !== 'same-origin-allow-popups';
@@ -225,7 +225,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Sem CORP/COEP, recursos podem ser embutidos por origens arbitrárias e o isolamento cross-origin necessário para features sensíveis (ex.: SharedArrayBuffer) não é garantido.',
     remediation: 'Defina Cross-Origin-Resource-Policy: same-origin e, quando aplicável, Cross-Origin-Embedder-Policy: require-corp.',
     safeExample: 'Cross-Origin-Resource-Policy: same-origin\nCross-Origin-Embedder-Policy: require-corp',
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (h) => !h['cross-origin-resource-policy'] && !h['cross-origin-embedder-policy'],
   },
   {
@@ -237,7 +237,7 @@ export const headersRules: HttpRule[] = [
     impact: 'Refletir a Origin com credenciais habilitadas permite que qualquer site malicioso faça requisições autenticadas em nome da vítima e leia as respostas, vazando dados sensíveis.',
     remediation: 'Nunca reflita a Origin de forma dinâmica nem use null/* com credenciais. Valide a Origin contra uma allowlist e responda apenas com origens explicitamente confiáveis.',
     safeExample: 'Access-Control-Allow-Origin: https://meuapp.com\nAccess-Control-Allow-Credentials: true',
-    reference: 'OWASP A05:2021 - Security Misconfiguration (CORS)',
+    reference: 'OWASP A02:2025 - Security Misconfiguration (CORS)',
     check: (h) => {
       const acao = (h['access-control-allow-origin'] || '').trim().toLowerCase();
       const acac = (h['access-control-allow-credentials'] || '').toLowerCase() === 'true';
@@ -258,13 +258,79 @@ export const headersRules: HttpRule[] = [
     impact: 'Respostas sensíveis sem diretiva de cache restritiva podem ser armazenadas por proxies, CDNs ou pelo navegador, expondo dados privados a outros usuários do mesmo cache compartilhado.',
     remediation: 'Defina Cache-Control: no-store (ou private/no-cache) em respostas que contenham dados sensíveis ou cookies de sessão.',
     safeExample: 'Cache-Control: no-store, private\nPragma: no-cache',
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     check: (h) => {
       const cc = (h['cache-control'] || '').toLowerCase();
       const sensitive = !!h['set-cookie'] || /application\/json/.test((h['content-type'] || '').toLowerCase());
       if (!sensitive) return false;
       if (!cc) return true;
       return !/(no-store|private|no-cache)/.test(cc);
+    },
+  },
+  {
+    id: 'COOKIE_004',
+    title: 'Cookie de sessão sem prefixo __Host-/__Secure-',
+    category: 'Headers HTTP',
+    severity: 'low',
+    description: 'O cookie de sessão não usa os prefixos __Host- ou __Secure-, que fazem o navegador impor Secure/Path=/ e bloquear sobrescrita por subdomínios.',
+    impact: 'Sem __Host-, um subdomínio comprometido (ou takeover) pode plantar um cookie de sessão no domínio principal (session fixation) e cookies podem ser aceitos via HTTP.',
+    remediation: 'Nomeie o cookie de sessão com o prefixo __Host- (exige Secure, Path=/ e sem Domain) ou ao menos __Secure-.',
+    safeExample: 'Set-Cookie: __Host-session=...; Secure; HttpOnly; SameSite=Lax; Path=/',
+    reference: 'OWASP Session Management Cheat Sheet; RFC 6265bis (cookie prefixes)',
+    check: (h) => {
+      const sc = h['set-cookie'] || '';
+      if (!sc) return false;
+      const isSession = /(?:^|\n|,\s*)(?:sess|session|sid|token|auth|jwt|connect\.sid|PHPSESSID|JSESSIONID)[^=]*=/i.test(sc);
+      if (!isSession) return false;
+      return !/__Host-|__Secure-/.test(sc);
+    },
+  },
+  {
+    id: 'HEAD_CSP_002',
+    title: 'CSP sem base-uri / object-src / frame-ancestors',
+    category: 'Headers HTTP',
+    severity: 'medium',
+    description: 'A CSP presente não define base-uri, object-src ou frame-ancestors. Sem essas diretivas, a política deixa brechas fora do script-src.',
+    impact: "Sem base-uri, uma tag <base> injetada redireciona todos os scripts relativos; sem object-src 'none', plugins/Flash-like podem executar código; sem frame-ancestors, a página fica sujeita a clickjacking (X-Frame-Options sozinho é legado).",
+    remediation: "Adicione base-uri 'self'; object-src 'none'; frame-ancestors 'none' (ou 'self') à CSP.",
+    safeExample: "Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'",
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CSP Level 3',
+    check: (h) => {
+      const csp = (h['content-security-policy'] || '').toLowerCase();
+      if (!csp) return false;
+      return !/base-uri/.test(csp) || !/object-src/.test(csp) || !/frame-ancestors/.test(csp);
+    },
+  },
+  {
+    id: 'HEAD_010',
+    title: 'CSP sem canal de relatório (Reporting-Endpoints/report-to)',
+    category: 'Headers HTTP',
+    severity: 'info',
+    description: 'Há CSP configurada, mas sem report-to/Reporting-Endpoints (ou apenas o legado report-uri). Violações em produção não são observadas.',
+    impact: 'Sem relatórios, tentativas de XSS bloqueadas pela CSP e quebras da política após deploys passam despercebidas, e não há sinal de ataque em andamento.',
+    remediation: 'Defina Reporting-Endpoints: csp="https://.../csp-reports" e adicione report-to csp; à CSP (report-to é o padrão atual; report-uri é legado).',
+    safeExample: 'Reporting-Endpoints: csp="https://seudominio.com/csp-reports"\nContent-Security-Policy: ...; report-to csp',
+    reference: 'W3C Reporting API; CSP Level 3 report-to',
+    check: (h) => {
+      const csp = (h['content-security-policy'] || h['content-security-policy-report-only'] || '').toLowerCase();
+      if (!csp) return false;
+      const hasReportTo = /report-to/.test(csp) && !!h['reporting-endpoints'];
+      return !hasReportTo;
+    },
+  },
+  {
+    id: 'HEAD_011',
+    title: 'X-XSS-Protection obsoleto presente',
+    category: 'Headers HTTP',
+    severity: 'info',
+    description: 'O header X-XSS-Protection está presente. O auditor XSS foi removido dos navegadores modernos e o header pode introduzir vulnerabilidades (vazamento cross-site via bloqueio seletivo).',
+    impact: 'Nenhum benefício em navegadores atuais; em versões antigas, o modo de filtro pode ser abusado para causar XS-Leaks ou quebrar páginas legítimas.',
+    remediation: 'Remova X-XSS-Protection (ou defina como 0) e confie em uma Content-Security-Policy forte.',
+    safeExample: 'X-XSS-Protection: 0',
+    reference: 'OWASP HTTP Headers Cheat Sheet; MDN X-XSS-Protection (deprecated)',
+    check: (h) => {
+      const v = (h['x-xss-protection'] || '').trim();
+      return !!v && !/^0\b/.test(v);
     },
   },
 ];

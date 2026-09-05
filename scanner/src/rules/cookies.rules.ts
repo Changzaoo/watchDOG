@@ -13,7 +13,7 @@ export const cookiesRules: FileRule[] = [
     remediation: 'Defina sempre httpOnly: true, secure: true e sameSite: "strict" (ou "lax") ao emitir cookies de sessão, garantindo proteção contra roubo via script, sniffing e CSRF.',
     safeExample: "res.cookie('session', token, {\n  httpOnly: true,\n  secure: true,\n  sameSite: 'strict',\n  maxAge: 1000 * 60 * 60,\n});",
     testSuggestion: 'Inspecione o cabeçalho Set-Cookie da sessão na resposta e confirme a presença simultânea de HttpOnly, Secure e SameSite.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-1004; CWE-614',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-1004; CWE-614',
     patterns: [
       /res\.cookie\s*\([^)]*\{(?:(?!httpOnly)[\s\S]){0,200}?\}\s*\)/,
       /(?:Set-Cookie|setHeader\(\s*["']Set-Cookie)[\s\S]{0,120}?(?:session|sid|token)=(?:(?!HttpOnly)[\s\S]){0,120}/i,

@@ -88,6 +88,26 @@ const positivos = [
   ['CLIENT_003', 'return isPremium ? fullData : null'],
   ['LLM_007', 'const system = `Você é um agente. Sua chave: sk-abc1234567890abcdef1234`'],
   ['LLM_008', 'const messages=[{role:"system",content:`Analise: ${imageText}`}]'],
+  // Hardening 2026: cripto, sessao, SSRF, framework
+  ['CRYPTO_001', 'const hash = createHash("md5").update(password).digest("hex")'],
+  ['CRYPTO_002', 'const token = Math.random().toString(36).substring(2)'],
+  ['CRYPTO_003', 'const c = createCipheriv("aes-256-ecb", key, null)'],
+  ['CRYPTO_005', 'await db.user.create({ data: { password: req.body.password } })'],
+  ['CRYPTO_006', 'const hash = await bcrypt.hash(senha, 8)'],
+  ['CRYPTO_007', 'const agent = new https.Agent({ rejectUnauthorized: false })'],
+  ['SESS_001', 'app.use(session({ secret: "keyboard-cat", resave: false }))'],
+  ['SESS_003', 'app.use(session({ secret: process.env.S, resave: false, saveUninitialized: false }))'],
+  ['SESS_005', 'const resetToken = Date.now().toString(36)'],
+  ['SSRF_002', 'const meta = await fetch("http://169.254.169.254/latest/meta-data/")'],
+  ['SSRF_004', 'const webhookUrl = req.body.webhookUrl'],
+  ['SSRF_005', 'await page.goto(req.query.url)'],
+  ['FRAME_002', 'if (headers["x-middleware-subrequest"]) skipAuth()'],
+  ['FRAME_003', "app.set('trust proxy', true)"],
+  ['FRAME_005', 'VITE_STRIPE_SECRET_KEY=sk_live_abc'],
+  ['XSS_101', 'window.addEventListener("message", (e) => { render(e.data); })'],
+  ['XSS_102', 'el.innerHTML = location.hash.slice(1)'],
+  ['INJ_102', 'await sendMail({ to: req.body.to, subject: "oi" })'],
+  ['GQL_001', 'const server = new ApolloServer({ schema })'],
 ];
 for (const [id, snippet] of positivos) {
   test(`positivo: ${id} dispara em código vulnerável`, () => {
@@ -106,6 +126,11 @@ const negativos = [
   ['IAC_001', 'acl = "private"'],
   ['CLIENT_001', 'const theme = localStorage.getItem("theme")'],
   ['WHOOK_002', 'if (status === "loading") return spinner'],
+  ['CRYPTO_002', 'const token = crypto.randomBytes(32).toString("hex")'],
+  ['CRYPTO_006', 'const hash = await bcrypt.hash(senha, 12)'],
+  ['CRYPTO_007', 'const agent = new https.Agent({ rejectUnauthorized: true })'],
+  ['FRAME_003', "app.set('trust proxy', 1)"],
+  ['CRYPTO_001', 'const etag = createHash("md5").update(fileBuffer).digest("hex")'],
 ];
 for (const [id, snippet] of negativos) {
   test(`negativo: ${id} NÃO dispara em código seguro`, () => {
@@ -177,4 +202,83 @@ test('cross-file: WHOOK_001 suprimida quando o projeto verifica assinatura do we
   });
   const ids = await scanIds(dir);
   assert.ok(!ids.has('WHOOK_001'), 'WHOOK_001 deveria ser suprimida quando há constructEvent/verificação de assinatura');
+});
+
+// ---------------------------------------------------------------------------
+// Upgrade set/2026: regras poliglotas, novas HttpRules e scanner de libs JS
+const { scanJsLibraries } = require('../dist/analyzers/jsLibScanner.js');
+
+const positivos2026 = [
+  ['POLY_001', 'cmd := exec.Command("sh", "-c", userInput)'],
+  ['POLY_001', 'exec.Command(fmt.Sprintf("ping %s", host))'],
+  ['POLY_002', 'data.Body = template.HTML(userInput)'],
+  ['POLY_003', 'db.Query(fmt.Sprintf("SELECT * FROM u WHERE id=%s", id))'],
+  ['POLY_003', 'stmt.executeQuery("SELECT * FROM users WHERE name = \'" + name)'],
+  ['POLY_004', "include $_GET['page'];"],
+  ['POLY_005', 'extract($_REQUEST);'],
+  ['POLY_006', 'mysqli_query($c, "SELECT * FROM t WHERE id=" . $_GET["id"]);'],
+  ['POLY_007', 'obj.send(params[:method])'],
+  ['POLY_008', 'YAML.load(params[:data])'],
+  ['POLY_009', 'const out = path.join(dest, entry.fileName);'],
+  ['POLY_010', 'const f = { filter: `(uid=${username})` }; // ldap'],
+  ['POLY_012', 'ObjectInputStream ois = new ObjectInputStream(request.getInputStream());'],
+];
+for (const [id, code] of positivos2026) {
+  test(`positivo: ${id} dispara em código vulnerável`, () => {
+    assert.ok(matchesRule(id, code), `${id} deveria casar: ${code}`);
+  });
+}
+
+const negativos2026 = [
+  ['POLY_001', 'cmd := exec.Command("convert", inputPath, outputPath)'],
+  ['POLY_003', 'db.Query("SELECT * FROM users WHERE id = $1", id)'],
+  ['POLY_004', "include 'header.php';"],
+  ['POLY_007', 'obj.send(:approve!)'],
+  ['POLY_008', 'YAML.safe_load(params[:data])'],
+];
+for (const [id, code] of negativos2026) {
+  test(`negativo: ${id} NÃO dispara em código seguro`, () => {
+    assert.ok(!matchesRule(id, code), `${id} não deveria casar: ${code}`);
+  });
+}
+
+test('HttpRule COOKIE_004: sessão sem prefixo __Host- dispara; com prefixo não', () => {
+  const r = httpRuleById('COOKIE_004');
+  assert.ok(r.check({ 'set-cookie': 'session=abc; Secure; HttpOnly; Path=/' }));
+  assert.ok(!r.check({ 'set-cookie': '__Host-session=abc; Secure; HttpOnly; Path=/' }));
+  assert.ok(!r.check({ 'set-cookie': 'theme=dark; Path=/' }), 'cookie não-sessão ignorado');
+});
+
+test('HttpRule HEAD_CSP_002: CSP sem frame-ancestors dispara; completa não', () => {
+  const r = httpRuleById('HEAD_CSP_002');
+  assert.ok(r.check({ 'content-security-policy': "default-src 'self'; script-src 'self'" }));
+  assert.ok(!r.check({ 'content-security-policy': "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'" }));
+  assert.ok(!r.check({}), 'sem CSP não dispara (coberto por HEAD_002)');
+});
+
+test('HttpRule HEAD_010: CSP sem report-to/Reporting-Endpoints dispara', () => {
+  const r = httpRuleById('HEAD_010');
+  assert.ok(r.check({ 'content-security-policy': "default-src 'self'; report-uri /csp" }));
+  assert.ok(!r.check({ 'content-security-policy': "default-src 'self'; report-to csp", 'reporting-endpoints': 'csp="https://x/csp"' }));
+});
+
+test('HttpRule HEAD_011: X-XSS-Protection 1 dispara; 0 não', () => {
+  const r = httpRuleById('HEAD_011');
+  assert.ok(r.check({ 'x-xss-protection': '1; mode=block' }));
+  assert.ok(!r.check({ 'x-xss-protection': '0' }));
+  assert.ok(!r.check({}));
+});
+
+test('jsLibScanner: detecta jQuery 1.12.4 e AngularJS EOL; ignora jQuery 3.7.1', () => {
+  const hits = scanJsLibraries('/*! jQuery JavaScript Library v1.12.4 */ ... <script src="/vendor/angular-1.7.9.min.js"></script>');
+  const libs = hits.map(h => `${h.library}@${h.version}:${h.vuln}`);
+  assert.ok(libs.includes('jQuery@1.12.4:cve'), libs.join(','));
+  assert.ok(libs.includes('AngularJS@1.7.9:eol'), libs.join(','));
+  const clean = scanJsLibraries('/*! jQuery JavaScript Library v3.7.1 */ lodash-4.17.21.min.js');
+  assert.equal(clean.length, 0, 'versões corrigidas não devem disparar');
+});
+
+test('integridade: referências OWASP migradas para Top 10 2025 (nenhum A0x:2021 restante)', () => {
+  const stale = allFileRules.filter(r => /A\d\d:2021/.test(r.reference || ''));
+  assert.deepEqual(stale.map(r => r.id), [], 'regras ainda referenciando OWASP 2021');
 });

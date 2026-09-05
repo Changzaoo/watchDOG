@@ -32,7 +32,7 @@ export const supabaseRules: FileRule[] = [
     remediation: 'Ative RLS em todas as tabelas: ALTER TABLE nome ENABLE ROW LEVEL SECURITY; Crie políticas por usuário: CREATE POLICY "user_policy" ON tabela FOR ALL USING (auth.uid() = user_id);',
     safeExample: '-- SQL no Supabase:\nALTER TABLE orders ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "users_own_orders"\n  ON orders FOR ALL\n  USING (auth.uid() = user_id);',
     testSuggestion: 'No painel Supabase, vá em Database > Tables e verifique se RLS está ativo (cadeado fechado) em cada tabela.',
-    reference: 'OWASP A01:2021 - Broken Access Control',
+    reference: 'OWASP A01:2025 - Broken Access Control',
     patterns: [
       /supabase\.from\(["'`][^"'`]+["'`]\)\s*\.select\(["'`]\*["'`]\)/i,
       /supabase\.from\(["'`][^"'`]+["'`]\)\.(?:select|delete|update)\(/i,
@@ -86,7 +86,7 @@ export const supabaseRules: FileRule[] = [
     attackScenarioDefensive: 'Usuário intercepta a query, muda o user_id para o de outra pessoa e acessa dados privados.',
     remediation: 'Confie apenas no auth.uid() via RLS, não em filtros enviados pelo cliente.',
     safeExample: '-- RLS garante que só o próprio usuário acessa:\nCREATE POLICY "own_data" ON tabela\n  USING (auth.uid() = user_id);\n-- O cliente não precisa filtrar: supabase.from("tabela").select("*");',
-    reference: 'OWASP A01:2021 - Broken Access Control',
+    reference: 'OWASP A01:2025 - Broken Access Control',
     patterns: [
       /\.eq\(["'`]user_id["'`],\s*(?:user|session|auth)[\w.]+(?:id|userId)\)/i,
     ],

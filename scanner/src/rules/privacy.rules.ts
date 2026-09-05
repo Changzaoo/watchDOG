@@ -127,7 +127,7 @@ export const privacyRules: FileRule[] = [
     remediation: 'Configure scrubbing/redaction de campos sensíveis antes de enviar eventos ao monitoramento. Nunca inclua senhas ou documentos em mensagens de log; registre apenas identificadores internos pseudonimizados.',
     safeExample: "// Remova PII antes de capturar o erro:\nSentry.captureException(err, {\n  extra: { userId: hashUserId(user.id) }, // sem email/cpf/senha\n});",
     testSuggestion: 'Inclua `Sentry.captureMessage(`falha login ${password}`)` em um arquivo .ts e confirme que PRIVACY_012 dispara.',
-    reference: 'LGPD Art. 46 / OWASP A09:2021 - Security Logging and Monitoring Failures',
+    reference: 'LGPD Art. 46 / OWASP A09:2025 - Security Logging and Alerting Failures',
     patterns: [
       /(?:console\.(?:log|info|debug)|logger\.[a-z]+|captureException|captureMessage)\s*\([^)]*\b(?:password|senha|cpf|email|phone|telefone|cartao|creditCard)\b[^)]*\)/i,
     ],

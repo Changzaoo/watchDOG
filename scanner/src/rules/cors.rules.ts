@@ -10,7 +10,7 @@ export const corsRules: FileRule[] = [
     impact: 'Qualquer site pode fazer requisições à API. Se houver cookies ou tokens, pode facilitar ataques CSRF.',
     remediation: 'Defina uma whitelist de origens permitidas.',
     safeExample: "cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') ?? [] })",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /res\.setHeader\(["'`]Access-Control-Allow-Origin["'`],\s*["'`]\*["'`]\)/,
       /["'`]Access-Control-Allow-Origin["'`]\s*:\s*["'`]\*["'`]/,
@@ -26,7 +26,7 @@ export const corsRules: FileRule[] = [
     impact: 'Qualquer origem pode fazer requisições autenticadas.',
     remediation: 'Valide a origem contra uma whitelist antes de refletir.',
     safeExample: "const allowedOrigins = ['https://app.com'];\nconst origin = req.headers.origin;\nif (allowedOrigins.includes(origin)) {\n  res.setHeader('Access-Control-Allow-Origin', origin);\n}",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /res\.setHeader\(["'`]Access-Control-Allow-Origin["'`],\s*req\.headers\.origin/,
       /origin\s*:\s*\(origin,\s*callback\)\s*=>\s*callback\(null,\s*origin\)/,
@@ -42,7 +42,7 @@ export const corsRules: FileRule[] = [
     impact: 'Expõe métodos que podem ser explorados para reconhecimento ou ataques.',
     remediation: 'Permita apenas os métodos HTTP necessários (GET, POST, PUT, DELETE, PATCH).',
     safeExample: "cors({ methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'] })",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /methods\s*:\s*\[[^\]]*(?:TRACE|CONNECT)[^\]]*\]/i,
     ],

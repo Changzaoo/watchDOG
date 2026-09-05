@@ -10,7 +10,7 @@ export const nodeRules: FileRule[] = [
     impact: 'Remote Code Execution (RCE) se o input do usuário chegar ao eval().',
     remediation: 'Elimine o uso de eval(). Use JSON.parse() para dados, ou refatore a lógica.',
     safeExample: '// Em vez de eval(userInput):\nconst data = JSON.parse(userInput); // para JSON\n// Para expressões matemáticas, use math.js',
-    reference: 'OWASP A03:2021 - Injection',
+    reference: 'OWASP A05:2025 - Injection',
     patterns: [/\beval\s*\(/],
     fileExtensions: ['.js', '.ts', '.mjs', '.cjs'],
   },
@@ -23,7 +23,7 @@ export const nodeRules: FileRule[] = [
     impact: 'Execução arbitrária de comandos no servidor. Comprometimento total do sistema.',
     remediation: 'Nunca passe input do usuário diretamente para exec/spawn. Use spawn com array de argumentos e valide todos os inputs.',
     safeExample: "// Seguro:\nconst { execFile } = require('child_process');\nexecFile('ls', ['-la', '/safepath'], callback);\n// Nunca: exec(`ls ${userInput}`)",
-    reference: 'OWASP A03:2021 - Injection',
+    reference: 'OWASP A05:2025 - Injection',
     patterns: [
       /(?:exec|execSync)\s*\(`[^`]*\$\{/,
       /(?:exec|execSync)\s*\([^)]*(?:req\.|body\.|params\.|query\.)[^)]*\)/,
@@ -40,7 +40,7 @@ export const nodeRules: FileRule[] = [
     impact: 'Qualquer site pode fazer requisições autenticadas à API se o usuário estiver logado.',
     remediation: 'Configure CORS com whitelist de origens específicas. Nunca use * com credentials: true.',
     safeExample: "app.use(cors({\n  origin: ['https://meuprojeto.com', 'https://app.meuprojeto.com'],\n  credentials: true\n}));",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /cors\(\s*\)/,
       /["'`]Access-Control-Allow-Origin["'`]\s*:\s*["'`]\*["'`]/,
@@ -58,7 +58,7 @@ export const nodeRules: FileRule[] = [
     impact: 'Ausência de headers de segurança expõe a aplicação a ataques como clickjacking, MIME sniffing, etc.',
     remediation: "Adicione helmet() como primeiro middleware do Express.",
     safeExample: "import helmet from 'helmet';\napp.use(helmet());",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /express\(\)/,
     ],
@@ -73,7 +73,7 @@ export const nodeRules: FileRule[] = [
     impact: 'Brute force de senhas, scraping, DoS na aplicação.',
     remediation: 'Use express-rate-limit em rotas sensíveis.',
     safeExample: "import rateLimit from 'express-rate-limit';\nconst loginLimiter = rateLimit({ windowMs: 15*60*1000, max: 10 });\napp.use('/api/auth/login', loginLimiter);",
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /router\.post\(["'`]\/(?:login|signin|auth|register|password|reset)["'`]/i,
     ],
@@ -88,7 +88,7 @@ export const nodeRules: FileRule[] = [
     impact: 'Revela estrutura interna da aplicação, versões, caminhos de arquivo. Facilita reconhecimento para atacantes.',
     remediation: 'Em produção, retorne mensagens de erro genéricas. Log o erro internamente.',
     safeExample: "app.use((err, req, res, next) => {\n  console.error(err); // log interno\n  res.status(500).json({ error: 'Internal server error' });\n});",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /res\.(?:json|send)\s*\(\s*(?:\{[^}]*stack|err\.stack|error\.stack)/,
       /res\.status\([^)]+\)\.json\(\s*(?:\{[^}]*message:\s*(?:err|error)\.message)/,
@@ -104,7 +104,7 @@ export const nodeRules: FileRule[] = [
     impact: 'Cookie acessível via JavaScript (XSS), transmitido em HTTP, ou enviado em requisições cross-site (CSRF).',
     remediation: 'Sempre defina HttpOnly, Secure e SameSite nos cookies de sessão.',
     safeExample: "res.cookie('session', token, {\n  httpOnly: true,\n  secure: process.env.NODE_ENV === 'production',\n  sameSite: 'strict',\n  maxAge: 24 * 60 * 60 * 1000\n});",
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /res\.cookie\(["'`][^"'`]+["'`],\s*[^,]+(?:,\s*\{[^}]*\})?\)/,
     ],
@@ -119,7 +119,7 @@ export const nodeRules: FileRule[] = [
     impact: 'Requisições muito grandes podem causar DoS ou consumo excessivo de memória.',
     remediation: 'Configure um limite de tamanho para o body parser.',
     safeExample: "app.use(express.json({ limit: '10mb' }));\napp.use(express.urlencoded({ extended: true, limit: '10mb' }));",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /express\.json\(\s*\)/,
       /bodyParser\.json\(\s*\)/,
@@ -135,7 +135,7 @@ export const nodeRules: FileRule[] = [
     impact: 'SQL Injection: acesso não autorizado, exfiltração ou destruição de dados.',
     remediation: 'Use queries parametrizadas ou ORM.',
     safeExample: "// Seguro com parâmetros:\nawait db.query('SELECT * FROM users WHERE id = $1', [userId]);\n// Com ORM: await User.findById(userId);",
-    reference: 'OWASP A03:2021 - Injection',
+    reference: 'OWASP A05:2025 - Injection',
     patterns: [
       /["'`]SELECT[^"'`]*\$\{/,
       /["'`]INSERT[^"'`]*\$\{/,
@@ -154,7 +154,7 @@ export const nodeRules: FileRule[] = [
     impact: 'SQL Injection via Prisma mesmo usando ORM.',
     remediation: 'Use Prisma.sql tag literal com parâmetros separados, não interpolação direta.',
     safeExample: "// Seguro:\nconst result = await prisma.$queryRaw(Prisma.sql`SELECT * FROM users WHERE id = ${userId}`);\n// Nunca: prisma.$queryRaw`SELECT * FROM users WHERE name = '${req.body.name}'`",
-    reference: 'OWASP A03:2021 - Injection',
+    reference: 'OWASP A05:2025 - Injection',
     patterns: [
       /prisma\.\$(?:queryRaw|executeRaw)\s*`[^`]*\$\{/,
     ],
@@ -169,7 +169,7 @@ export const nodeRules: FileRule[] = [
     impact: 'Qualquer vazamento do banco expõe todas as senhas dos usuários.',
     remediation: 'Use bcrypt ou argon2 para hash de senhas antes de armazenar.',
     safeExample: "import bcrypt from 'bcrypt';\nconst hashed = await bcrypt.hash(password, 12);\nawait User.create({ password: hashed });",
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /(?:password|senha)\s*:\s*(?:req\.|body\.|data\.)?password/i,
       /create\(\s*\{[^}]*password\s*:\s*(?:req|body|data)/i,
@@ -185,7 +185,7 @@ export const nodeRules: FileRule[] = [
     impact: 'Remote Code Execution.',
     remediation: 'Elimine o uso de new Function() com conteúdo dinâmico.',
     safeExample: '// Refatore a lógica para não precisar de execução dinâmica de código.',
-    reference: 'OWASP A03:2021 - Injection',
+    reference: 'OWASP A05:2025 - Injection',
     patterns: [/new\s+Function\s*\(/],
     fileExtensions: ['.js', '.ts'],
   },

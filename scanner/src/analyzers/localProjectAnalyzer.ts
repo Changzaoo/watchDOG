@@ -68,6 +68,30 @@ function buildRuleBuckets(rules: FileRule[]): {
   return { rulesByExt, rulesAnyExt };
 }
 
+/**
+ * Resolve as chaves de extensão de um arquivo para consulta no índice de regras.
+ *
+ * path.extname() não serve sozinho para dotfiles: '.env' devolve '' e
+ * '.env.local' devolve '.local'. Como .env é justamente onde ficam os segredos,
+ * regras declaradas com fileExtensions: ['.env'] nunca casariam.
+ * Aqui devolvemos todas as chaves plausíveis para o arquivo.
+ */
+export function extensionKeysFor(filePath: string): string[] {
+  const base = filePath.replace(/\\/g, '/').split('/').pop()?.toLowerCase() ?? '';
+  const keys = new Set<string>();
+
+  const ext = path.extname(base).toLowerCase();
+  if (ext) keys.add(ext);
+
+  // Dotfiles: o nome inteiro funciona como chave ('.npmrc', '.env').
+  if (base.startsWith('.')) keys.add(base);
+
+  // Variantes de ambiente: .env.local, .env.production, env.production...
+  if (/(^|\.)env(\.|$)/.test(base)) keys.add('.env');
+
+  return [...keys];
+}
+
 const { rulesByExt: RULES_BY_EXT, rulesAnyExt: RULES_ANY_EXT } = buildRuleBuckets(ALL_RULES);
 
 export async function analyzeLocalProject(opts: LocalScanOptions): Promise<ScanResultRaw> {
@@ -226,9 +250,21 @@ export async function analyzeLocalProject(opts: LocalScanOptions): Promise<ScanR
     const normPath = file.normPath ?? file.path.replace(/\\/g, '/');
     const content = file.content;
 
-    // candidates = regras da extensão + regras "any" (dependem de fileNamePatterns).
-    const byExt = RULES_BY_EXT.get(ext);
-    const candidates = byExt ? [...byExt, ...RULES_ANY_EXT] : RULES_ANY_EXT;
+    // candidates = regras de TODAS as chaves de extensão do arquivo (inclui
+    // dotfiles como .env / .env.local) + regras "any" (via fileNamePatterns).
+    const extKeys = extensionKeysFor(normPath);
+    const matched: FileRule[] = [];
+    const seenRuleIds = new Set<string>();
+    for (const key of extKeys) {
+      const bucket = RULES_BY_EXT.get(key);
+      if (!bucket) continue;
+      for (const r of bucket) {
+        if (seenRuleIds.has(r.id)) continue;
+        seenRuleIds.add(r.id);
+        matched.push(r);
+      }
+    }
+    const candidates = matched.length ? [...matched, ...RULES_ANY_EXT] : RULES_ANY_EXT;
 
     for (const rule of candidates) {
       // Regra de postura suprimida por proteção presente em outro arquivo do projeto.

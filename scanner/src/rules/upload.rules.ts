@@ -10,7 +10,7 @@ export const uploadRules: FileRule[] = [
     impact: 'Upload de arquivos executáveis, scripts PHP, webshells e outros tipos perigosos.',
     remediation: 'Configure fileFilter no Multer para validar MIME type e extensão.',
     safeExample: "const upload = multer({\n  fileFilter: (req, file, cb) => {\n    const allowed = ['image/jpeg', 'image/png', 'image/webp'];\n    cb(null, allowed.includes(file.mimetype));\n  }\n});",
-    reference: 'OWASP A04:2021 - Insecure Design',
+    reference: 'OWASP A06:2025 - Insecure Design',
     patterns: [
       /multer\(\s*\{[^}]*(?:dest|storage)[^}]*\}\s*\)/,
       /multer\(\s*\{\s*dest/,
@@ -26,7 +26,7 @@ export const uploadRules: FileRule[] = [
     impact: 'DoS por uploads de arquivos muito grandes. Consumo excessivo de disco/memória.',
     remediation: 'Configure limits.fileSize no Multer.',
     safeExample: "const upload = multer({\n  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB\n  fileFilter: validateFile\n});",
-    reference: 'OWASP A04:2021 - Insecure Design',
+    reference: 'OWASP A06:2025 - Insecure Design',
     patterns: [
       /multer\s*\(\s*\{(?![^}]*limits)[^}]*\}\s*\)/,
     ],
@@ -41,7 +41,7 @@ export const uploadRules: FileRule[] = [
     impact: 'Upload de arquivos perigosos: .php, .exe, .sh, .js executável no servidor.',
     remediation: 'Valide a extensão do arquivo e mantenha uma whitelist.',
     safeExample: "const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];\nconst ext = path.extname(file.originalname).toLowerCase();\nif (!ALLOWED_EXTENSIONS.includes(ext)) throw new Error('File type not allowed');",
-    reference: 'OWASP A04:2021 - Insecure Design',
+    reference: 'OWASP A06:2025 - Insecure Design',
     patterns: [
       /req\.file\.originalname/,
       /file\.originalname/,
@@ -57,7 +57,7 @@ export const uploadRules: FileRule[] = [
     impact: 'Path traversal: sobrescrever arquivos do servidor, incluindo configurações críticas.',
     remediation: 'Use path.basename() e sanitize o nome. Melhor ainda: gere um nome UUID aleatório.',
     safeExample: "import { v4 as uuidv4 } from 'uuid';\nimport path from 'path';\nconst safeFilename = uuidv4() + path.extname(file.originalname);",
-    reference: 'OWASP A01:2021 - Broken Access Control',
+    reference: 'OWASP A01:2025 - Broken Access Control',
     patterns: [
       /path\.join\([^)]*originalname[^)]*\)/i,
       /\+\s*(?:file|req\.file)\.originalname/i,
@@ -73,7 +73,7 @@ export const uploadRules: FileRule[] = [
     impact: 'SVG pode conter JavaScript que executa em contexto do domínio quando renderizado diretamente.',
     remediation: 'Sanitize SVGs com DOMPurify (servidor) ou bloqueie SVGs em uploads de usuário.',
     safeExample: "// Sanitizar SVG no backend:\nimport { JSDOM } from 'jsdom';\nimport DOMPurify from 'dompurify';\nconst window = new JSDOM('').window;\nconst purify = DOMPurify(window as any);\nconst clean = purify.sanitize(svgContent);",
-    reference: 'OWASP A03:2021 - Injection (XSS)',
+    reference: 'OWASP A05:2025 - Injection (XSS)',
     patterns: [
       /["'`]image\/svg\+xml["'`]/,
       /\.svg["'`]\s*,/i,
@@ -89,7 +89,7 @@ export const uploadRules: FileRule[] = [
     impact: 'Colisão de nomes, sobrescrita de arquivos, path traversal, exposição de informações.',
     remediation: 'Gere nomes únicos (UUID) para todos os arquivos uploaded.',
     safeExample: "const filename = `${uuidv4()}${path.extname(file.originalname)}`;\nawait s3.putObject({ Key: `uploads/${filename}`, Body: file.buffer });",
-    reference: 'OWASP A04:2021 - Insecure Design',
+    reference: 'OWASP A06:2025 - Insecure Design',
     patterns: [
       /filename\s*:\s*(?:file|req\.file)\.originalname/i,
       /diskStorage.*filename.*originalname/is,
@@ -105,7 +105,7 @@ export const uploadRules: FileRule[] = [
     impact: 'Se um arquivo executável for uploaded, pode ser acessado e executado via URL.',
     remediation: 'Salve uploads fora da pasta public/. Sirva via endpoint que valida acesso.',
     safeExample: "// Salvar fora do webroot:\nconst uploadDir = path.join(__dirname, '..', '..', 'uploads'); // não em /public\n// Servir via endpoint controlado:\napp.get('/files/:id', auth, serveFile);",
-    reference: 'OWASP A04:2021 - Insecure Design',
+    reference: 'OWASP A06:2025 - Insecure Design',
     patterns: [
       /dest\s*:\s*["'`](?:\.\/)?public\//i,
       /path\.join\([^)]*['"]public['"]/i,

@@ -10,7 +10,7 @@ export const dosHeadersRules: HttpRule[] = [
     impact: 'Sem uma camada de borda, a origem recebe tráfego malicioso diretamente, ficando mais exposta a ataques volumétricos (DDoS), brute force e varreduras automatizadas.',
     remediation: 'Posicione um WAF/CDN à frente da aplicação para absorver tráfego volumétrico, filtrar requisições maliciosas e ocultar o IP de origem.',
     safeExample: 'Sirva a aplicação atrás de Cloudflare, AWS CloudFront + WAF, Fastly, Akamai ou Azure Front Door, mantendo a origem acessível apenas pela borda.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-693',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-693',
     check: (headers) => {
       const h = headers;
       const server = (h['server'] || '').toLowerCase();
@@ -39,7 +39,7 @@ export const dosHeadersRules: HttpRule[] = [
     impact: 'Postura de segurança positiva: a camada de borda ajuda a absorver tráfego volumétrico, filtrar requisições maliciosas e ocultar a origem. Este achado é informativo.',
     remediation: 'Mantenha as regras do WAF e os limites de rate limiting da borda atualizados e garanta que a origem só seja acessível através da camada de borda.',
     safeExample: 'Cloudflare/CloudFront/Fastly/Akamai/Azure Front Door ativos, com regras de WAF e rate limiting configuradas e origem protegida.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-693',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-693',
     check: (headers) => {
       const h = headers; const server = (h['server'] || '').toLowerCase(); const via = (h['via'] || '').toLowerCase();
       return !!h['cf-ray'] || server.includes('cloudflare') ||
@@ -77,7 +77,7 @@ export const dosHeadersRules: HttpRule[] = [
     impact: 'Expor a stack e a versão da origem, sem proteção de borda, facilita a fingerprinting e o direcionamento de ataques (DDoS e exploração de versões vulneráveis) diretamente contra o servidor.',
     remediation: 'Remova X-Powered-By e a versão do header Server, e posicione um CDN/WAF à frente para ocultar e proteger a origem.',
     safeExample: "// Em Express:\napp.disable('x-powered-by');\n// e sirva a aplicação atrás de um CDN/WAF, sem versão no header Server.",
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-200',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-200',
     check: (headers) => {
       const h = headers;
       const hasEdge = !!h['cf-ray'] || !!h['x-amz-cf-id'] || !!h['x-served-by'] ||

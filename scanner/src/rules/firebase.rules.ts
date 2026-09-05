@@ -31,7 +31,7 @@ export const firebaseRules: FileRule[] = [
     attackScenarioDefensive: 'Arquivo commitado no repositório é descoberto por atacante via GitHub search ou histórico do git.',
     remediation: 'Remova o arquivo. Adicione ao .gitignore. Use variável de ambiente com o conteúdo JSON: process.env.FIREBASE_SERVICE_ACCOUNT_JSON',
     safeExample: "const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '{}');\nadmin.initializeApp({ credential: admin.credential.cert(serviceAccount) });",
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /serviceAccountKey\.json/i,
       /firebase-adminsdk.*\.json/i,

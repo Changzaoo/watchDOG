@@ -87,7 +87,7 @@ export const iacRules: FileRule[] = [
       'provider "aws" {\n  region = var.region\n  # Sem credenciais no código: usa role/instance profile,\n  # variáveis de ambiente ou perfil compartilhado.\n}',
     testSuggestion:
       'Inclua uma string no formato AKIA seguida de 16 caracteres maiúsculos/dígitos e confirme a detecção; remova-a e confirme que não dispara.',
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures; AWS Credentials Best Practices',
+    reference: 'OWASP A07:2025 - Authentication Failures; AWS Credentials Best Practices',
     patterns: [
       /\bAKIA[0-9A-Z]{16}\b/,
       /aws_secret_access_key\s*=\s*["'][A-Za-z0-9/+]{40}["']/i,

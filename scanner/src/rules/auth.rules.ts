@@ -10,7 +10,7 @@ export const authRules: FileRule[] = [
     impact: 'Senhas em texto puro no banco de dados. Qualquer vazamento expõe todas as senhas.',
     remediation: 'Use bcrypt (cost factor >= 12) ou argon2id para hashear senhas.',
     safeExample: "const hash = await bcrypt.hash(password, 12);\nawait db.user.create({ data: { password: hash } });",
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /(?:bcrypt|argon2|scrypt|pbkdf2)/i,
     ],
@@ -25,7 +25,7 @@ export const authRules: FileRule[] = [
     impact: 'Tokens nunca expiram, tornando-se válidos indefinidamente mesmo após logout ou comprometimento.',
     remediation: 'Sempre defina expiresIn no JWT. Use refresh tokens para sessões longas.',
     safeExample: "const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {\n  expiresIn: '15m'\n});",
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /jwt\.sign\([^)]+\)\s*(?:;|$)/m,
     ],
@@ -40,7 +40,7 @@ export const authRules: FileRule[] = [
     impact: 'Tokens previsíveis permitem que atacantes redefinam senhas de outras contas.',
     remediation: 'Use crypto.randomBytes() para gerar tokens de reset.',
     safeExample: "import crypto from 'crypto';\nconst resetToken = crypto.randomBytes(32).toString('hex');\n// Armazene hash do token, não o token em si",
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /resetToken\s*=\s*Math\.random/i,
       /(?:reset|forgot|recovery)[Tt]oken\s*=\s*Math\.random/,
@@ -56,7 +56,7 @@ export const authRules: FileRule[] = [
     impact: 'Ataques de brute force em senhas, credential stuffing.',
     remediation: 'Implemente rate limiting na rota de login e bloqueie após N tentativas falhas.',
     safeExample: "const loginLimiter = rateLimit({ windowMs: 15*60*1000, max: 5 });\napp.post('/auth/login', loginLimiter, loginController);",
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /(?:router|app)\.post\(["'`]\/(?:login|signin|auth\/login)["'`]/i,
     ],
@@ -71,7 +71,7 @@ export const authRules: FileRule[] = [
     impact: 'Comprometimento de uma única senha dá acesso total à administração.',
     remediation: 'Exija MFA para todas as contas administrativas usando TOTP (Google Authenticator) ou WebAuthn.',
     safeExample: "router.use('/admin', requireAuth, requireMFA, adminRouter);",
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /(?:router|app)\.[a-z]+\(["'`]\/admin(?:\/[^"'`]*)?["'`]/i,
     ],
@@ -86,7 +86,7 @@ export const authRules: FileRule[] = [
     impact: 'Roubo de refresh token permite obter novos access tokens indefinidamente.',
     remediation: 'Armazene refresh token em cookie HttpOnly. Armazene apenas o hash no banco.',
     safeExample: "// Armazenar hash do refresh token:\nconst tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');\nawait db.refreshToken.create({ data: { tokenHash, userId } });",
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /localStorage\.setItem\([^,]+,\s*[^)]*refresh/i,
       /refreshToken.*localStorage/i,
@@ -102,7 +102,7 @@ export const authRules: FileRule[] = [
     impact: 'Permite enumeração de usuários cadastrados.',
     remediation: 'Use a mesma mensagem de erro para usuário inexistente e senha incorreta.',
     safeExample: 'res.status(401).json({ error: "Credenciais inválidas" }); // mesma msg em ambos os casos',
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /["'`](?:User not found|Usuário não encontrado|Email not found)["'`]/i,
       /["'`](?:Invalid password|Senha incorreta|Wrong password)["'`]/i,
@@ -118,7 +118,7 @@ export const authRules: FileRule[] = [
     impact: 'Sessões ativas indefinidamente, mesmo após logout ou inatividade.',
     remediation: 'Configure maxAge e rolling na sessão. Implemente logout que invalida a sessão.',
     safeExample: "app.use(session({\n  secret: process.env.SESSION_SECRET!,\n  resave: false,\n  saveUninitialized: false,\n  cookie: { maxAge: 30 * 60 * 1000, httpOnly: true, secure: true }\n}));",
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /session\(\s*\{[^}]*(?:secret)[^}]*\}\s*\)/,
     ],

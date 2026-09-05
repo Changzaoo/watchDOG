@@ -10,7 +10,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Vazamento da chave permite acesso não autorizado a serviços externos, custos inesperados e comprometimento de dados.',
     remediation: 'Mova a chave para variável de ambiente. Nunca versione secrets.',
     safeExample: 'const apiKey = process.env.API_KEY;\nif (!apiKey) throw new Error("API_KEY not configured");',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /(?:api[_-]?key|apikey)\s*[=:]\s*["'`][A-Za-z0-9+\/=_\-]{16,}["'`]/i,
       /AIza[0-9A-Za-z\-_]{35}/,
@@ -27,7 +27,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Comprometimento total de criptografia, possibilidade de impersonação, acesso a sistemas seguros.',
     remediation: 'Remova imediatamente a chave, revogue-a e gere uma nova. Use cofre de secrets (Vault, AWS Secrets Manager).',
     safeExample: '# Carregue a chave de um cofre:\nconst privateKey = process.env.PRIVATE_KEY?.replace(/\\\\n/g, "\\n");',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /-----BEGIN\s+(?:RSA |EC |DSA )?PRIVATE KEY-----/,
       /-----BEGIN OPENSSH PRIVATE KEY-----/,
@@ -43,7 +43,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Atacantes podem forjar tokens JWT e obter acesso não autorizado a qualquer conta.',
     remediation: 'Use um secret aleatório de pelo menos 256 bits armazenado em variável de ambiente.',
     safeExample: 'const jwtSecret = process.env.JWT_SECRET;\n// Gere com: openssl rand -hex 64',
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /jwt\.sign\([^,]+,\s*["'`](?:secret|password|123|test|dev|myapp|change)[^"'`]*["'`]/i,
       /JWT_SECRET\s*=\s*["'`](?!process\.env)[A-Za-z0-9]{1,20}["'`]/i,
@@ -60,7 +60,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Todos os secrets definidos neste arquivo ficam expostos a qualquer pessoa com acesso ao repositório.',
     remediation: 'Adicione .env ao .gitignore imediatamente. Use .env.example com valores falsos. Rotacione todas as credenciais.',
     safeExample: '# .gitignore\n.env\n.env.local\n.env.production\n*.env',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /^(?:DATABASE_URL|API_KEY|SECRET_KEY|JWT_SECRET|PRIVATE_KEY|PASSWORD)\s*=/m,
     ],
@@ -75,7 +75,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Acesso irrestrito ao Firebase Admin SDK, podendo ler/escrever qualquer dado do projeto.',
     remediation: 'Remova imediatamente, revogue a chave no console Firebase/GCP, e use variável de ambiente.',
     safeExample: 'const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || "{}");',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /"type"\s*:\s*"service_account"/,
       /serviceAccountKey\.json/i,
@@ -92,7 +92,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Acesso total à conta da exchange: saques, operações, leitura de saldo.',
     remediation: 'Revogue imediatamente a chave. Armazene em variável de ambiente. Use permissões mínimas necessárias.',
     safeExample: 'const apiKey = process.env.EXCHANGE_API_KEY;',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /(?:binance|mexc|kraken|coinbase|ftx)[_-]?(?:api[_-]?key|secret)\s*[:=]\s*["'`][A-Za-z0-9]{20,}["'`]/i,
       /(?:BINANCE|MEXC|KRAKEN)_(?:API_KEY|SECRET)\s*=\s*["']?[A-Za-z0-9]{20,}/,
@@ -108,7 +108,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Acesso direto ao banco de dados, possibilidade de exfiltração ou destruição de dados.',
     remediation: 'Mova a DATABASE_URL para variável de ambiente. Use .env.example sem senha real.',
     safeExample: 'const db = process.env.DATABASE_URL; // postgresql://user:pass@host/db',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis):\/\/[^"'\s]+:[^"'\s]+@[^"'\s]+/i,
     ],
@@ -123,7 +123,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Atacantes podem forjar eventos de webhook e manipular a lógica de negócio.',
     remediation: 'Mova o webhook secret para variável de ambiente e valide a assinatura de cada evento.',
     safeExample: 'const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /(?:webhook[_-]?secret|WEBHOOK_SECRET)\s*[:=]\s*["'`][A-Za-z0-9+\/=_\-]{16,}["'`]/i,
       /whsec_[A-Za-z0-9+\/=]{32,}/,
@@ -139,7 +139,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Acesso total e irreversível à carteira. Todos os ativos podem ser roubados.',
     remediation: 'Remova imediatamente. Transfira todos os fundos para carteira nova. Nunca armazene seed phrase em código.',
     safeExample: '// Nunca armazene seed phrase em código.\n// Use hardware wallet ou cofre de secrets.',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /(?:mnemonic|seed[_-]?phrase|seed[_-]?words)\s*[:=]\s*["'`][a-z]+(?:\s+[a-z]+){11,}["'`]/i,
       /["'`](?:abandon|ability|able|about|above|absent)\s+(?:[a-z]+\s+){10,}[a-z]+["'`]/,
@@ -155,7 +155,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Qualquer usuário da aplicação pode inspecionar o código e obter o token.',
     remediation: 'Nunca inclua tokens privados em código frontend. Use variáveis de servidor e proxy.',
     safeExample: '// Frontend deve chamar seu backend, que usa o token do lado servidor:\nconst data = await fetch("/api/secure-data");',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /(?:token|secret|apiKey)\s*[:=]\s*["'`][A-Za-z0-9+\/=_\-]{20,}["'`]/i,
       /Authorization:\s*["'`]Bearer\s+[A-Za-z0-9+\/=_\-]{20,}["'`]/i,
@@ -171,7 +171,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Uso fraudulento da conta de pagamento, cobranças não autorizadas, acesso a dados de clientes.',
     remediation: 'Revogue e regenere a chave imediatamente. Use sempre do lado servidor.',
     safeExample: 'const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /sk_live_[A-Za-z0-9]{24,}/,
       /sk_test_[A-Za-z0-9]{24,}/,
@@ -188,7 +188,7 @@ export const secretsRules: FileRule[] = [
     impact: 'Acesso ao repositório, possibilidade de exfiltrar código, push malicioso, acesso a outros repositórios.',
     remediation: 'Revogue o token imediatamente no GitHub/GitLab. Use secrets gerenciados em CI/CD.',
     safeExample: 'const ghToken = process.env.GITHUB_TOKEN;',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /gh[pousr]_[A-Za-z0-9]{36,}/,
       /glpat-[A-Za-z0-9_\-]{20,}/,
@@ -208,7 +208,7 @@ export const secretsRules: FileRule[] = [
     remediation: 'Revogue e rotacione imediatamente a credencial no console do provedor. Use IAM roles/Workload Identity em vez de chaves estáticas e armazene segredos em cofre (AWS Secrets Manager, GCP Secret Manager, Azure Key Vault).',
     safeExample: '// Use a cadeia de credenciais padrão (IAM role / Workload Identity):\nconst client = new S3Client({ region: process.env.AWS_REGION });',
     testSuggestion: 'Crie um arquivo com AKIAIOSFODNN7EXAMPLE e aws_secret_access_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" e confirme que a regra dispara.',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/,
       /aws_secret_access_key\s*=\s*["'`]?[A-Za-z0-9\/+]{40}["'`]?/i,
@@ -230,7 +230,7 @@ export const secretsRules: FileRule[] = [
     remediation: 'Revogue a chave imediatamente no painel do provedor e gere uma nova. Mantenha chaves apenas no lado servidor, em variáveis de ambiente, e nunca em código frontend ou versionado.',
     safeExample: 'const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });',
     testSuggestion: 'Adicione uma string sk-ant-api03- seguida de 80+ caracteres e verifique que a detecção ocorre.',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /\bsk-(?:proj|svcacct|admin)-[A-Za-z0-9_-]{20,}T3BlbkFJ[A-Za-z0-9_-]{20,}\b/,
       /\bsk-[A-Za-z0-9]{20,}T3BlbkFJ[A-Za-z0-9]{20,}\b/,
@@ -251,7 +251,7 @@ export const secretsRules: FileRule[] = [
     remediation: 'Revogue o token imediatamente no provedor correspondente. Use tokens de escopo mínimo e curta validade, e gerencie-os via secrets de CI/CD em vez de hardcoded.',
     safeExample: 'const token = process.env.GITHUB_TOKEN; // injetado pelo CI, escopo mínimo',
     testSuggestion: 'Inclua um token glpat- com 20+ caracteres ou um npm_ com 36 caracteres e confirme o alerta.',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /\bgh[pousr]_[A-Za-z0-9]{36,}\b/,
       /\bgithub_pat_[A-Za-z0-9]{22}_[A-Za-z0-9]{59}\b/,
@@ -273,7 +273,7 @@ export const secretsRules: FileRule[] = [
     remediation: 'Revogue e regenere a chave no painel do serviço. Restrinja IPs/escopos quando suportado e mantenha o segredo apenas no servidor, em variável de ambiente.',
     safeExample: 'const sg = sgMail.setApiKey(process.env.SENDGRID_API_KEY);',
     testSuggestion: 'Adicione um token Slack xoxb- com 10+ caracteres e confirme a detecção.',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /\bxox[baprse]-[A-Za-z0-9-]{10,}\b/,
       /\bSK[0-9a-fA-F]{32}\b/,
@@ -296,7 +296,7 @@ export const secretsRules: FileRule[] = [
     remediation: 'Revogue e regenere o token na plataforma correspondente. Use tokens de escopo mínimo e mantenha-os em cofre de secrets, nunca versionados.',
     safeExample: 'const cf = new Cloudflare({ apiToken: process.env.CLOUDFLARE_API_TOKEN });',
     testSuggestion: 'Inclua um token dop_v1_ com 64 caracteres hexadecimais e verifique o alerta.',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /\brk_live_[A-Za-z0-9]{24,}\b/,
       /\bpk_live_[A-Za-z0-9]{24,}\b/,
@@ -318,7 +318,7 @@ export const secretsRules: FileRule[] = [
     remediation: 'Nunca exponha a chave service_role no cliente. Revogue/rotacione-a no painel Supabase, use apenas no servidor e prefira a chave anon (com RLS) no frontend.',
     safeExample: 'const supabase = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY); // só no servidor',
     testSuggestion: 'Cole um JWT cujo payload contenha o papel service_role e confirme a detecção.',
-    reference: 'OWASP A01:2021 - Broken Access Control',
+    reference: 'OWASP A01:2025 - Broken Access Control',
     patterns: [
       /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]*(?:c2VydmljZV9yb2xl|InNlcnZpY2Vfcm9sZSI)[A-Za-z0-9_-]*\.[A-Za-z0-9_-]{10,}/,
       /eyJ[A-Za-z0-9_-]{15,}\.eyJ[A-Za-z0-9_-]{40,}\.[A-Za-z0-9_-]{20,}/,
@@ -337,7 +337,7 @@ export const secretsRules: FileRule[] = [
     remediation: 'Mova a connection string para variável de ambiente e rotacione a senha. Restrinja o acesso por rede/IP e use credenciais de privilégio mínimo.',
     safeExample: 'const url = process.env.DATABASE_URL; // postgresql://user:****@host/db',
     testSuggestion: 'Use postgres://admin:S3nh4Real@db.example.com:5432/app e confirme que dispara, e que placeholders como ${DB_PASS} não disparam.',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis|rediss|amqps?):\/\/[^:@\s"'`]+:[^@\s"'`]+@[^\s"'`\/]+/i,
     ],
@@ -355,7 +355,7 @@ export const secretsRules: FileRule[] = [
     remediation: 'Remova a chave do repositório, revogue-a e gere um novo par. Armazene chaves privadas em HSM ou cofre de secrets e nunca as versione.',
     safeExample: '// Carregue a chave de um cofre em runtime:\nconst key = await vault.read("tls/private_key");',
     testSuggestion: 'Adicione uma linha "-----BEGIN OPENSSH PRIVATE KEY-----" e confirme a detecção para essa variante.',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY(?: BLOCK)?-----/,
     ],

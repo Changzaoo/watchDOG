@@ -10,7 +10,7 @@ export const reactRules: FileRule[] = [
     impact: 'Atacante pode injetar scripts maliciosos que executam no contexto do usuário.',
     remediation: 'Use DOMPurify para sanitizar HTML antes de renderizar. Prefira componentes React para conteúdo dinâmico.',
     safeExample: "import DOMPurify from 'dompurify';\n<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />",
-    reference: 'OWASP A03:2021 - Injection (XSS)',
+    reference: 'OWASP A05:2025 - Injection (XSS)',
     patterns: [/dangerouslySetInnerHTML/],
     fileExtensions: ['.jsx', '.tsx', '.js', '.ts'],
   },
@@ -23,7 +23,7 @@ export const reactRules: FileRule[] = [
     impact: 'Qualquer script na página pode roubar o token e impersonar o usuário.',
     remediation: 'Use cookies HttpOnly com SameSite=Strict e Secure para armazenar tokens de autenticação.',
     safeExample: '// Backend define cookie:\n// res.cookie("token", jwt, { httpOnly: true, secure: true, sameSite: "strict" })',
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /localStorage\.setItem\(["'`][^"'`]*(?:token|jwt|auth|session)[^"'`]*["'`]/i,
       /localStorage\[["'`][^"'`]*(?:token|jwt|auth)[^"'`]*["'`]\]\s*=/i,
@@ -39,7 +39,7 @@ export const reactRules: FileRule[] = [
     impact: 'Injeção de scripts maliciosos no DOM.',
     remediation: 'Use textContent em vez de innerHTML para texto puro. Para HTML, use DOMPurify.',
     safeExample: "element.textContent = userInput;\n// ou com HTML: element.innerHTML = DOMPurify.sanitize(userInput);",
-    reference: 'OWASP A03:2021 - Injection (XSS)',
+    reference: 'OWASP A05:2025 - Injection (XSS)',
     patterns: [
       /\.innerHTML\s*=\s*(?!["'`]<[a-z]+[^>]*>[^<]+<\/[a-z]+>["'`])/,
       /document\.write\(/,
@@ -55,7 +55,7 @@ export const reactRules: FileRule[] = [
     impact: 'Usuários podem acessar recursos protegidos manipulando o estado do frontend.',
     remediation: 'Sempre valide permissões no backend. O frontend pode ocultar elementos, mas o backend deve rejeitar requisições não autorizadas.',
     safeExample: '// Backend:\nrouter.get("/admin/data", requireAdmin, (req, res) => { ... });',
-    reference: 'OWASP A01:2021 - Broken Access Control',
+    reference: 'OWASP A01:2025 - Broken Access Control',
     patterns: [
       /(?:isAdmin|isOwner|hasPermission|userRole)\s*(?:===|!==|==)\s*["'`](?:admin|owner|superuser)["'`]\s*(?:&&|\?)/i,
       /role\s*===\s*["'`]admin["'`]\s*&&\s*(?:<|return)/i,
@@ -71,7 +71,7 @@ export const reactRules: FileRule[] = [
     impact: 'Secrets como API keys ficam visíveis no código-fonte do frontend.',
     remediation: 'Nunca prefixe secrets com VITE_. Use VITE_ apenas para configurações não sensíveis. Secrets devem ficar no backend.',
     safeExample: '# .env\n# Nunca:\n# VITE_SECRET_KEY=...\n# Sim (não sensível):\nVITE_APP_TITLE=MeuApp',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /VITE_(?:SECRET|KEY|TOKEN|PASSWORD|PRIVATE|API_KEY|AUTH)\s*=/i,
       /import\.meta\.env\.VITE_(?:SECRET|KEY|TOKEN|PASSWORD|PRIVATE)/i,
@@ -87,7 +87,7 @@ export const reactRules: FileRule[] = [
     impact: 'Secrets como API keys, tokens de banco de dados ficam expostos no frontend.',
     remediation: 'Use NEXT_PUBLIC_ apenas para valores não sensíveis. Acesse secrets somente em API routes ou getServerSideProps.',
     safeExample: '# .env.local\n# Nunca:\n# NEXT_PUBLIC_SECRET_KEY=...\n# Correto:\nSECRET_KEY=... # só no servidor',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /NEXT_PUBLIC_(?:SECRET|KEY|TOKEN|PASSWORD|PRIVATE|DATABASE|SUPABASE_SERVICE)/i,
     ],
@@ -102,7 +102,7 @@ export const reactRules: FileRule[] = [
     impact: 'Scripts injetados podem roubar tokens de sessão.',
     remediation: 'Use cookies HttpOnly para tokens de autenticação.',
     safeExample: '// Configure cookie HttpOnly no backend:\nres.cookie("session", token, { httpOnly: true, secure: true });',
-    reference: 'OWASP A07:2021 - Identification and Authentication Failures',
+    reference: 'OWASP A07:2025 - Authentication Failures',
     patterns: [
       /sessionStorage\.setItem\(["'`][^"'`]*(?:token|jwt|auth|session)[^"'`]*["'`]/i,
     ],
@@ -117,7 +117,7 @@ export const reactRules: FileRule[] = [
     impact: 'Possibilidade de XSS stored ou reflected.',
     remediation: 'Sanitize todo conteúdo externo com DOMPurify antes de renderizar.',
     safeExample: "import DOMPurify from 'dompurify';\nconst clean = DOMPurify.sanitize(dirtyHtml);",
-    reference: 'OWASP A03:2021 - Injection (XSS)',
+    reference: 'OWASP A05:2025 - Injection (XSS)',
     patterns: [
       /\{[^}]*(?:html|content|markup|body)\s*\}/i,
     ],

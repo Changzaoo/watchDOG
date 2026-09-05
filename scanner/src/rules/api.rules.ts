@@ -42,7 +42,7 @@ export const apiRules: FileRule[] = [
     impact: 'Exposição de informações internas, estado da aplicação, versões.',
     remediation: 'Remova endpoints de debug em produção ou proteja com autenticação forte.',
     safeExample: "// Remova ou proteja endpoints de debug:\nif (process.env.NODE_ENV !== 'production') {\n  app.get('/debug', adminOnly, debugHandler);\n}",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /(?:router|app)\.(?:get|post)\s*\(["'`]\/(?:debug|diagnostics|health-detail|internal)[^"'`]*["'`]/i,
     ],
@@ -88,7 +88,7 @@ export const apiRules: FileRule[] = [
     impact: 'Exposição de informações sobre a estrutura interna, banco de dados, versões.',
     remediation: 'Retorne erros genéricos ao cliente. Logue detalhes internamente.',
     safeExample: "catch (err) {\n  logger.error(err); // log interno completo\n  res.status(500).json({ error: 'Internal server error' }); // genérico\n}",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /res\.(?:json|send)\s*\(\s*\{[^}]*message\s*:\s*(?:err|error)\.message/i,
     ],
@@ -103,7 +103,7 @@ export const apiRules: FileRule[] = [
     impact: 'TRACE pode facilitar ataques XST (Cross-Site Tracing). DELETE sem controle destrói dados.',
     remediation: 'Desabilite TRACE. Proteja DELETE com autenticação e autorização rigorosas.',
     safeExample: "// Remova TRACE:\napp.use((req, res, next) => {\n  if (req.method === 'TRACE') return res.status(405).end();\n  next();\n});",
-    reference: 'OWASP A05:2021 - Security Misconfiguration',
+    reference: 'OWASP A02:2025 - Security Misconfiguration',
     patterns: [
       /(?:router|app)\.trace\s*\(/i,
     ],

@@ -115,7 +115,7 @@ export const dockerRules: FileRule[] = [
     impact: 'Secrets versionados no repositório ficam expostos a todos com acesso ao código.',
     remediation: 'Use variáveis de ambiente (${}), arquivos .env externos ou Docker Secrets.',
     safeExample: "services:\n  db:\n    environment:\n      POSTGRES_PASSWORD: ${DB_PASSWORD} # do .env não versionado",
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /(?:POSTGRES_PASSWORD|MYSQL_ROOT_PASSWORD|MONGO_INITDB_ROOT_PASSWORD)\s*:\s*["']?[a-zA-Z0-9!@#$%^&*]{4,}/,
     ],
@@ -151,7 +151,7 @@ export const dockerRules: FileRule[] = [
     remediation: 'Nunca coloque secrets literais em ENV/ARG. Injete credenciais em tempo de execução via variáveis de ambiente, --env-file ou orquestrador, e durante o build use BuildKit secrets (RUN --mount=type=secret) que não persistem nas camadas.',
     safeExample: "# Build com BuildKit, sem persistir o secret nas camadas:\nRUN --mount=type=secret,id=npm_token \\\n    NPM_TOKEN=$(cat /run/secrets/npm_token) npm ci\n# Em runtime: docker run --env-file .env minha-imagem",
     testSuggestion: 'Rode "docker history --no-trunc sua-imagem" e "docker inspect sua-imagem" procurando por valores que pareçam credenciais. Adicione um scan de secrets (ex.: trufflehog/gitleaks) no pipeline de build da imagem.',
-    reference: 'OWASP A02:2021 - Cryptographic Failures; Docker build secrets',
+    reference: 'OWASP A04:2025 - Cryptographic Failures; Docker build secrets',
     patterns: [
       /^(?:ENV|ARG)\s+\w*(?:PASSWORD|SECRET|TOKEN|API[_-]?KEY|PRIVATE[_-]?KEY|ACCESS[_-]?KEY)\w*\s*[=\s]\s*["']?[A-Za-z0-9/+_-]{8,}/im,
     ],

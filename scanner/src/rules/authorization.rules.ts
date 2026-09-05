@@ -10,7 +10,7 @@ export const authorizationRules: FileRule[] = [
     impact: 'Acesso não autorizado a funcionalidades administrativas.',
     remediation: 'Sempre aplique middleware de autenticação e autorização antes das rotas admin.',
     safeExample: "router.use('/admin', authenticate, requireRole('admin'), adminRoutes);",
-    reference: 'OWASP A01:2021 - Broken Access Control',
+    reference: 'OWASP A01:2025 - Broken Access Control',
     patterns: [
       /(?:router|app)\.[a-z]+\(["'`]\/admin[^"'`]*["'`],\s*(?!.*(?:auth|middleware|protect|verify|guard))[a-z]/i,
     ],
@@ -56,7 +56,7 @@ export const authorizationRules: FileRule[] = [
     impact: 'Qualquer usuário autenticado pode ler/escrever dados de outros usuários.',
     remediation: 'Habilite RLS em todas as tabelas e crie políticas adequadas.',
     safeExample: "-- Habilitar RLS:\nALTER TABLE posts ENABLE ROW LEVEL SECURITY;\n-- Política:\nCREATE POLICY \"Users can only see own posts\" ON posts\n  FOR SELECT USING (auth.uid() = user_id);",
-    reference: 'OWASP A01:2021 - Broken Access Control',
+    reference: 'OWASP A01:2025 - Broken Access Control',
     patterns: [
       /supabase\.from\(["'`][^"'`]+["'`]\)\.(?:select|insert|update|delete)/i,
     ],
@@ -71,7 +71,7 @@ export const authorizationRules: FileRule[] = [
     impact: 'Qualquer pessoa pode ler ou modificar todo o banco de dados.',
     remediation: 'Configure rules específicas por caminho, autenticação e ownership.',
     safeExample: '{\n  "rules": {\n    "users": {\n      "$uid": {\n        ".read": "$uid === auth.uid",\n        ".write": "$uid === auth.uid"\n      }\n    }\n  }\n}',
-    reference: 'OWASP A01:2021 - Broken Access Control',
+    reference: 'OWASP A01:2025 - Broken Access Control',
     patterns: [
       /".read"\s*:\s*"true"/,
       /".write"\s*:\s*"true"/,
@@ -88,7 +88,7 @@ export const authorizationRules: FileRule[] = [
     impact: 'Usuários podem acessar campos sensíveis que não deveriam ver.',
     remediation: 'Use shield, directives de autenticação, ou verificações manuais em cada resolver sensível.',
     safeExample: "const resolvers = {\n  Query: {\n    adminData: (_, __, ctx) => {\n      if (!ctx.user?.isAdmin) throw new ForbiddenError('Unauthorized');\n      return getAdminData();\n    }\n  }\n};",
-    reference: 'OWASP A01:2021 - Broken Access Control',
+    reference: 'OWASP A01:2025 - Broken Access Control',
     patterns: [
       /typeDefs\s*=\s*gql`/,
       /new\s+GraphQLSchema/,

@@ -116,7 +116,7 @@ export const k8sRules: FileRule[] = [
       '# Referencie um segredo gerenciado externamente; não inclua o valor no manifesto.\napiVersion: external-secrets.io/v1beta1\nkind: ExternalSecret\nspec:\n  secretStoreRef:\n    name: vault-backend',
     testSuggestion:
       'Crie um manifesto kind: Secret com stringData contendo "password:" e confirme a detecção; remova os dados em texto claro e confirme que não dispara.',
-    reference: 'Kubernetes Docs: Secrets (good practices); OWASP A02:2021 - Cryptographic Failures',
+    reference: 'Kubernetes Docs: Secrets (good practices); OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /^\s*kind:\s*Secret\b/im,
       /stringData:\s*[\s\S]{0,400}?(?:password|secret|token|api[_-]?key|private[_-]?key)\s*:/i,

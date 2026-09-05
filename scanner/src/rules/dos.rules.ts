@@ -13,7 +13,7 @@ export const dosRules: FileRule[] = [
     remediation: 'Aplique um limitador global como primeiro middleware e limitadores mais estritos em rotas sensíveis. Combine com proteção de borda (WAF/CDN) quando possível.',
     safeExample: "import rateLimit from 'express-rate-limit';\nconst limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });\napp.use(limiter);",
     testSuggestion: 'Envie uma rajada de requisições acima do teto configurado e verifique se as excedentes recebem HTTP 429 com header Retry-After.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-770',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-770',
     patterns: [/\bexpress\s*\(\s*\)/],
     fileExtensions: ['.js', '.ts', '.mjs', '.cjs'],
     suppressIfProjectMatches: /express-rate-limit|rate-limiter-flexible|@fastify\/rate-limit|@nestjs\/throttler|\brateLimit\s*\(/,
@@ -30,7 +30,7 @@ export const dosRules: FileRule[] = [
     remediation: 'Defina explicitamente um limit conservador (ex.: 100kb–1mb) compatível com o caso de uso real e rejeite payloads acima disso com HTTP 413.',
     safeExample: "app.use(express.json({ limit: '100kb' }));\napp.use(express.urlencoded({ extended: true, limit: '100kb' }));",
     testSuggestion: 'Envie um payload acima do limite esperado e confirme que o servidor responde HTTP 413 (Payload Too Large) sem alocar o corpo inteiro.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-770',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-770',
     patterns: [
       /(?:express|bodyParser)\.(?:json|urlencoded|raw|text)\s*\(\s*\)/,
       /limit\s*:\s*['"`]\s*(?:[1-9]\d|\d{3,})\s*mb['"`]/i,
@@ -49,7 +49,7 @@ export const dosRules: FileRule[] = [
     remediation: 'Reescreva o padrão para evitar quantificadores aninhados e grupos ambíguos. Prefira engines lineares (RE2) ou imponha timeout/limite de tamanho à entrada antes do match.',
     safeExample: "// Em vez de /(\\w+)+$/ use uma forma sem aninhamento:\nconst re = /^\\w+$/;\n// ou valide com RE2 para garantir tempo linear",
     testSuggestion: 'Meça o tempo de execução do padrão contra entradas patológicas crescentes (ex.: "aaaa...!"); o tempo não deve crescer de forma super-linear.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-1333',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-1333',
     patterns: [
       /\(([^()]*[+*])\)[+*]/,
       /\((?:\.\*|\.\+)\)[+*]/,
@@ -69,7 +69,7 @@ export const dosRules: FileRule[] = [
     remediation: 'Configure requestTimeout, headersTimeout e keepAliveTimeout no servidor. Em produção, posicione um proxy reverso/WAF que aplique timeouts agressivos.',
     safeExample: "const server = http.createServer(app);\nserver.headersTimeout = 60_000;\nserver.requestTimeout = 120_000;\nserver.keepAliveTimeout = 5_000;\nserver.listen(3000);",
     testSuggestion: 'Abra uma conexão e envie cabeçalhos byte a byte com pausas longas; o servidor deve encerrar a conexão ao atingir o headersTimeout.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-400',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-400',
     patterns: [
       /\.listen\s*\(/,
       /(?:http2?|https)\.createServer\s*\(/,
@@ -89,7 +89,7 @@ export const dosRules: FileRule[] = [
     remediation: 'Nunca zere timeouts em produção. Defina valores finitos e razoáveis para todos os timeouts de conexão e requisição.',
     safeExample: "server.requestTimeout = 120_000; // nunca 0\nserver.headersTimeout = 60_000;",
     testSuggestion: 'Verifique no código e em tempo de execução que nenhum timeout do servidor está em 0 e que conexões inativas são encerradas.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-400',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-400',
     patterns: [
       /(?:server\.timeout|requestTimeout|headersTimeout|keepAliveTimeout)\s*=\s*0\b/,
       /\.setTimeout\s*\(\s*0\b/,
@@ -168,7 +168,7 @@ export const dosRules: FileRule[] = [
     remediation: 'Imponha um limite máximo de bytes descomprimidos e aborte ao excedê-lo. Use streaming com contagem de bytes e valide a razão de compressão antes de processar.',
     safeExample: "const MAX = 50 * 1024 * 1024; // 50MB\nlet total = 0;\nstream.on('data', (chunk) => {\n  total += chunk.length;\n  if (total > MAX) stream.destroy(new Error('descompressão excedeu o limite'));\n});",
     testSuggestion: 'Processe um arquivo de teste cuja saída descomprimida excede o limite e confirme que a operação é abortada antes de esgotar a memória.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-409',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-409',
     patterns: [
       /zlib\.(?:gunzip|inflate|unzip|brotliDecompress)(?:Sync)?\s*\(/,
       /require\(\s*['"](?:adm-zip|unzipper|node-stream-zip|yauzl)['"]\s*\)/,
@@ -188,7 +188,7 @@ export const dosRules: FileRule[] = [
     remediation: 'Configure maxConcurrentStreams e maxSessionMemory ao criar o servidor HTTP/2 e mantenha o runtime atualizado com as mitigações de Rapid Reset.',
     safeExample: "const server = http2.createSecureServer({\n  key, cert,\n  settings: { maxConcurrentStreams: 100 },\n  maxSessionMemory: 10,\n});",
     testSuggestion: 'Abra muitos streams e cancele-os rapidamente; verifique que o servidor aplica o teto de streams concorrentes e permanece responsivo.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-770 (CVE-2023-44487)',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-770 (CVE-2023-44487)',
     patterns: [
       /http2\.(?:createSecureServer|createServer)\s*\(/,
     ],
@@ -207,7 +207,7 @@ export const dosRules: FileRule[] = [
     remediation: 'Aplique timeouts em todas as chamadas externas e use um circuit breaker (ex.: opossum, cockatiel) com fallback. Use AbortController/signal para cancelar requisições lentas.',
     safeExample: "import CircuitBreaker from 'opossum';\nconst call = () => axios.get(url, { timeout: 3000 });\nconst breaker = new CircuitBreaker(call, { timeout: 3000, errorThresholdPercentage: 50 });",
     testSuggestion: 'Simule um serviço externo lento/indisponível e verifique que as chamadas sofrem timeout e que o circuit breaker abre, evitando acúmulo de requisições.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-400',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-400',
     patterns: [
       /axios\.(?:get|post|put|delete|request)\s*\(/,
       /\bfetch\s*\(/,
@@ -227,7 +227,7 @@ export const dosRules: FileRule[] = [
     remediation: 'Não comprima respostas que misturem segredos e input refletido. Desabilite compressão para conteúdo sensível ou separe segredos do reflexo do usuário e use mitigações anti-BREACH.',
     safeExample: "app.use(compression({\n  filter: (req, res) => !res.getHeader('X-Sensitive') && compression.filter(req, res),\n}));",
     testSuggestion: 'Verifique que respostas contendo tokens/segredos com dados refletidos não são comprimidas ou aplicam mitigação anti-BREACH.',
-    reference: 'OWASP A02:2021 - Cryptographic Failures; CWE-310 (BREACH)',
+    reference: 'OWASP A04:2025 - Cryptographic Failures; CWE-310 (BREACH)',
     patterns: [
       /\bcompression\s*\(\s*\)/,
     ],
@@ -245,7 +245,7 @@ export const dosRules: FileRule[] = [
     remediation: 'Defina timeout-minutes em todos os jobs (e idealmente em passos críticos) para garantir que execuções sejam encerradas após um limite razoável.',
     safeExample: "jobs:\n  build:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@v4",
     testSuggestion: 'Revise todos os workflows e confirme que cada job declara timeout-minutes com um valor finito.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-400',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-400',
     patterns: [
       /^\s*runs-on\s*:/m,
     ],
@@ -264,7 +264,7 @@ export const dosRules: FileRule[] = [
     remediation: 'Nunca construa RegExp a partir de input do usuário. Use comparações literais, escape o input com uma função de escape de regex, ou valide contra um conjunto fixo de padrões com engine de tempo linear (RE2).',
     safeExample: "function escapeRegex(s) {\n  return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n}\nconst re = new RegExp(escapeRegex(req.query.term));",
     testSuggestion: 'Garanta que nenhum padrão de RegExp deriva de input do usuário; teste com entradas patológicas e meça o tempo de avaliação.',
-    reference: 'OWASP A03:2021 - Injection; CWE-1333',
+    reference: 'OWASP A05:2025 - Injection; CWE-1333',
     patterns: [
       /new\s+RegExp\s*\([^)]*(?:req\.|body\.|params\.|query\.)[A-Za-z_]/,
       /new\s+RegExp\s*\(\s*[A-Za-z_$][\w$]*\s*\+/,

@@ -146,7 +146,7 @@ export const apiAuthRules: FileRule[] = [
     remediation: 'Defina sameSite como "lax" ou "strict" nos cookies de sessão. Se precisar de "none" (cenários cross-site legítimos), combine sempre com secure: true.',
     safeExample: "app.use(session({\n  cookie: { httpOnly: true, secure: true, sameSite: 'strict' },\n}));",
     testSuggestion: 'Inspecione o cabeçalho Set-Cookie da sessão e confirme a presença de SameSite=Strict/Lax (ou SameSite=None acompanhado de Secure).',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-1275; CWE-352',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-1275; CWE-352',
     patterns: [
       /cookie\s*:\s*\{(?:(?!sameSite)[^}])*\}/i,
       /sameSite\s*:\s*["'`]none["'`](?![^}]*secure\s*:\s*true)/i,
@@ -165,7 +165,7 @@ export const apiAuthRules: FileRule[] = [
     remediation: 'Mantenha a proteção CSRF ativa para todos os métodos que alteram estado. Restrinja ignoreMethods apenas a métodos seguros (GET, HEAD, OPTIONS) ou use tokens/SameSite consistentemente.',
     safeExample: "import csrf from 'csurf';\napp.use(csrf({\n  cookie: { httpOnly: true, secure: true, sameSite: 'strict' },\n  ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],\n}));",
     testSuggestion: 'Envie um POST/PUT/DELETE sem token CSRF a partir de uma origem externa e confirme que a requisição é rejeitada (403).',
-    reference: 'OWASP A01:2021 - Broken Access Control; CWE-352',
+    reference: 'OWASP A01:2025 - Broken Access Control; CWE-352',
     patterns: [
       /csrf\s*:\s*false/i,
       /ignoreMethods\s*:\s*\[[^\]]*["'`](?:POST|PUT|DELETE|PATCH)["'`]/i,

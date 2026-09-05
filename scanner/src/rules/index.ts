@@ -32,6 +32,13 @@ import { dosHeadersRules } from './dosHeaders.rules';
 // Cadeia de ataque do vídeo "Hackeei uma IA" (webhook de pagamento + client-side)
 import { webhookRules } from './webhook.rules';
 import { clientSideRules } from './clientside.rules';
+// Hardening 2026: cripto, sessão e frameworks
+import { cryptoRules } from './crypto.rules';
+import { sessionRules } from './session.rules';
+import { frameworkRules } from './framework.rules';
+import { webAttackRules } from './webattacks.rules';
+import { exceptionRules } from './exceptions.rules';
+import { polyglotRules } from './polyglot.rules';
 
 export {
   apiRules,
@@ -65,6 +72,12 @@ export {
   dosHeadersRules,
   webhookRules,
   clientSideRules,
+  cryptoRules,
+  sessionRules,
+  frameworkRules,
+  webAttackRules,
+  exceptionRules,
+  polyglotRules,
 };
 
 export const allFileRules: FileRule[] = [
@@ -98,6 +111,12 @@ export const allFileRules: FileRule[] = [
   ...llmRules,
   ...webhookRules,
   ...clientSideRules,
+  ...cryptoRules,
+  ...sessionRules,
+  ...frameworkRules,
+  ...webAttackRules,
+  ...exceptionRules,
+  ...polyglotRules,
 ];
 
 // Regras HTTP usadas pelo URL analyzer (headers + WAF/CDN/rate-limit)

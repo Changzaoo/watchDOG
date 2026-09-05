@@ -71,3 +71,45 @@ test('analyzeUrl: alvo bloqueado gera achado SCAN_001 (não retorna vazio)', asy
   const res = await analyzeUrl({ url: 'http://10.0.0.1/', scanId: 't', depth: 'quick', onEvent: () => {} });
   assert.ok(res.findings.some(f => f.ruleId === 'SCAN_001'), 'esperava SCAN_001 ao falhar a conexão');
 });
+
+// ---------------------------------------------------------------------------
+// Upgrade set/2026: métodos HEAD/OPTIONS e teto de corpo por requisição
+test('OPTIONS: envia o método correto e devolve o header Allow sem corpo', async () => {
+  const srv = await startServer((req, res) => {
+    res.writeHead(req.method === 'OPTIONS' ? 204 : 405, { allow: 'GET, HEAD, POST, OPTIONS, TRACE' });
+    res.end();
+  });
+  try {
+    const r = await performRequest(validationFor(srv.port), {}, [], `http://127.0.0.1:${srv.port}/`, { method: 'OPTIONS', maxBodyBytes: 0 });
+    assert.equal(r.statusCode, 204);
+    assert.match(r.headers['allow'], /TRACE/);
+    assert.equal(r.body, '');
+  } finally { srv.close(); }
+});
+
+test('HEAD: não baixa corpo mesmo que o servidor envie', async () => {
+  const srv = await startServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/octet-stream', 'content-length': '10' });
+    if (req.method !== 'HEAD') res.write('0123456789');
+    res.end();
+  });
+  try {
+    const r = await performRequest(validationFor(srv.port), {}, [], `http://127.0.0.1:${srv.port}/`, { method: 'HEAD' });
+    assert.equal(r.statusCode, 200);
+    assert.equal(r.body, '');
+    assert.equal(r.headers['content-type'], 'application/octet-stream');
+  } finally { srv.close(); }
+});
+
+test('maxBodyBytes: trunca no teto pequeno preservando status/headers', async () => {
+  const srv = await startServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'text/plain' });
+    res.end('X'.repeat(50000));
+  });
+  try {
+    const r = await performRequest(validationFor(srv.port), {}, [], `http://127.0.0.1:${srv.port}/`, { maxBodyBytes: 1024 });
+    assert.equal(r.statusCode, 200);
+    assert.ok(r.body.length <= 1024 + 16384, 'corpo limitado ao teto (mais um chunk no máximo)');
+    assert.equal(r.truncated, true);
+  } finally { srv.close(); }
+});

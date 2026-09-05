@@ -35,7 +35,7 @@ export const clientSideRules: FileRule[] = [
       "// Servidor decide; o cliente só reflete:\nconst { plan } = await fetch('/api/me', { credentials: 'include' }).then(r => r.json());\n// E cada endpoint pago revalida no backend:\n// if (req.user.plan !== 'pro') return res.status(402).end();",
     testSuggestion:
       'No navegador, altere o valor de plano/role no localStorage e confirme que os endpoints protegidos continuam retornando 401/402/403 (o backend não confia no cliente).',
-    reference: 'OWASP A01:2021 - Broken Access Control; CWE-602 (Client-Side Enforcement of Server-Side Security)',
+    reference: 'OWASP A01:2025 - Broken Access Control; CWE-602 (Client-Side Enforcement of Server-Side Security)',
     patterns: [
       /(?:localStorage|sessionStorage)\.getItem\(\s*["'`](?:isAdmin|admin|isPro|isPremium|premium|role|plan|plano|subscription|assinatura|tier|entitlement|is_?active)["'`]\s*\)/i,
       /(?:localStorage|sessionStorage)\[\s*["'`](?:isAdmin|isPro|isPremium|role|plan|subscription)["'`]\s*\]/i,
@@ -60,7 +60,7 @@ export const clientSideRules: FileRule[] = [
       "// Servidor: só inclui o conteúdo pago se o usuário tem direito\nconst full = req.user.plan === 'pro';\nreturn res.json({\n  preview: dados.preview,\n  premium: full ? dados.premium : undefined, // ausente para free\n});",
     testSuggestion:
       'Como usuário free, inspecione a resposta da API (aba Network) e o DOM: o conteúdo premium NÃO deve estar presente — nem borrado, nem em props/estado.',
-    reference: 'OWASP A01:2021 - Broken Access Control; CWE-656 (Reliance on Security Through Obscurity)',
+    reference: 'OWASP A01:2025 - Broken Access Control; CWE-656 (Reliance on Security Through Obscurity)',
     patterns: [
       // blur e premium/locked/paywall/pro no MESMO atributo class, em qualquer ordem
       /(?:className|class)\s*=\s*["'`{][^"'`}]*(?:\bblur[\w-]*[^"'`}]*(?:premium|locked|paywall|\bpro\b)|(?:premium|locked|paywall|\bpro\b)[^"'`}]*\bblur)/i,
@@ -111,7 +111,7 @@ export const clientSideRules: FileRule[] = [
       '// Garanta que o cliente só carregue chaves públicas por design (anon key)\n// e que toda a segurança dependa do backend, não da obscuridade da stack.',
     testSuggestion:
       'Rode o Wappalyzer no seu próprio site e faça grep no bundle por URLs internas/comentários; confirme que nada além do esperado (chaves públicas) está exposto.',
-    reference: 'OWASP A05:2021 - Security Misconfiguration; CWE-200',
+    reference: 'OWASP A02:2025 - Security Misconfiguration; CWE-200',
     patterns: [
       /https?:\/\/[a-z0-9]{15,}\.supabase\.co/i,
       /\/\/\s*(?:TODO|FIXME|HACK|internal|interno|debug)\b[^\n]{0,80}(?:api|endpoint|webhook|secret|token)/i,

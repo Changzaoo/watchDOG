@@ -83,10 +83,21 @@ function parseRetryAfter(value?: string): number {
 
 type RawResponse = SafeHttpResponse & { redirectLocation?: string };
 
+/** Opções extras por requisição (método e teto de corpo menor para sondagens leves). */
+export interface SafeRequestOptions {
+  /** Só métodos "seguros" (sem efeito colateral) são permitidos: GET, HEAD e OPTIONS. */
+  method?: 'GET' | 'HEAD' | 'OPTIONS';
+  /** Teto de bytes do corpo; use um valor pequeno quando só status/headers importam (ex.: heapdump). */
+  maxBodyBytes?: number;
+  /** Não seguir redirects (útil para inspecionar Location/headers do primeiro salto). */
+  noFollow?: boolean;
+}
+
 export async function safeGet(
   urlStr: string,
   customHeaders: Record<string, string> = {},
-  redirectChain: string[] = []
+  redirectChain: string[] = [],
+  reqOpts: SafeRequestOptions = {}
 ): Promise<SafeHttpResponse> {
   if (redirectChain.length > MAX_REDIRECTS) {
     return { statusCode: 0, headers: {}, body: '', redirectChain, error: 'Too many redirects' };
@@ -111,7 +122,7 @@ export async function safeGet(
     };
   }
 
-  const res = await scheduleRequest(host, () => performRequest(validation, customHeaders, redirectChain, urlStr));
+  const res = await scheduleRequest(host, () => performRequest(validation, customHeaders, redirectChain, urlStr, reqOpts));
 
   // Back-off educado: se o alvo sinalizou limite (429/503), respeita Retry-After
   // por host nas próximas requisições.
@@ -121,7 +132,7 @@ export async function safeGet(
   }
 
   // Redirecionamento: cada salto re-passa pelo governador (re-valida SSRF + espaça).
-  if (res.redirectLocation) {
+  if (res.redirectLocation && !reqOpts.noFollow) {
     let nextUrl: string;
     try {
       nextUrl = res.redirectLocation.startsWith('http')
@@ -131,10 +142,19 @@ export async function safeGet(
       const { redirectLocation, ...rest } = res;
       return rest;
     }
-    return safeGet(nextUrl, customHeaders, [...redirectChain, urlStr]);
+    return safeGet(nextUrl, customHeaders, [...redirectChain, urlStr], reqOpts);
   }
 
   return res;
+}
+
+/** Requisição segura com método explícito (HEAD/OPTIONS) — mesmas garantias do safeGet. */
+export function safeRequest(
+  urlStr: string,
+  reqOpts: SafeRequestOptions,
+  customHeaders: Record<string, string> = {}
+): Promise<SafeHttpResponse> {
+  return safeGet(urlStr, customHeaders, [], reqOpts);
 }
 
 /** Executa UM salto HTTP (sem seguir redirect) e resolve no máximo uma vez. Exportado para testes. */
@@ -142,8 +162,11 @@ export function performRequest(
   validation: PublicScanAddress,
   customHeaders: Record<string, string>,
   redirectChain: string[],
-  originalUrl: string
+  originalUrl: string,
+  reqOpts: SafeRequestOptions = {}
 ): Promise<RawResponse> {
+  const method = reqOpts.method || 'GET';
+  const maxBody = Math.max(0, Math.min(reqOpts.maxBodyBytes ?? MAX_BODY_SIZE, MAX_BODY_SIZE));
   return new Promise((resolve) => {
     let parsed: URL;
     try {
@@ -172,7 +195,7 @@ export function performRequest(
       hostname: parsed.hostname,
       port: parsed.port || (isHttps ? 443 : 80),
       path: parsed.pathname + parsed.search,
-      method: 'GET',
+      method,
       headers: {
         'User-Agent': 'watchDOG/2.0 (+auditoria de seguranca defensiva; passivo e com limite de taxa)',
         'Accept': 'text/html,application/json,*/*',
@@ -229,14 +252,20 @@ export function performRequest(
 
       let body = '';
       let truncated = false;
+      if (method === 'HEAD' || maxBody === 0) {
+        // Sem corpo: resolve com status/headers e descarta o stream.
+        res.resume();
+        done({ statusCode, headers, body: '', redirectChain, finalUrl: parsed.toString(), tlsValid, tlsExpiry });
+        return;
+      }
       res.setEncoding('utf8');
       res.on('data', (chunk: string) => {
         if (truncated) return;
         body += chunk;
-        if (body.length >= MAX_BODY_SIZE) {
+        if (body.length >= maxBody) {
           // Corpo grande (ex.: homepage do YouTube): paramos de baixar, mas a
           // resposta com headers/status JÁ recebidos continua válida e analisável.
-          body = body.slice(0, MAX_BODY_SIZE);
+          body = body.slice(0, maxBody);
           truncated = true;
           res.destroy();
           done({ statusCode, headers, body, redirectChain, finalUrl: parsed.toString(), tlsValid, tlsExpiry, truncated: true });
@@ -265,7 +294,11 @@ export function performRequest(
   });
 }
 
-export async function checkPath(baseUrl: string, path: string): Promise<SafeHttpResponse> {
+export async function checkPath(
+  baseUrl: string,
+  path: string,
+  reqOpts: SafeRequestOptions = {}
+): Promise<SafeHttpResponse> {
   const url = baseUrl.replace(/\/$/, '') + path;
-  return safeGet(url);
+  return safeGet(url, {}, [], reqOpts);
 }

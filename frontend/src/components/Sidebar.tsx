@@ -131,7 +131,7 @@ export function Sidebar() {
               ? <><Wifi className="w-3 h-3" /> Backend online</>
               : <><WifiOff className="w-3 h-3" /> Backend offline</>}
           </div>
-          <div className="mt-2 text-xs text-gray-600 text-center">v1.0.0</div>
+          <div className="mt-2 text-xs text-gray-600 text-center">v1.1.0</div>
         </div>
       </aside>
     </>

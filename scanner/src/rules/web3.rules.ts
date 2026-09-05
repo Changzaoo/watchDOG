@@ -10,7 +10,7 @@ export const web3Rules: FileRule[] = [
     impact: 'Roubo imediato de todos os fundos da carteira.',
     remediation: 'Nunca inclua private keys em código. Use MetaMask, WalletConnect ou hardware wallet.',
     safeExample: '// Use MetaMask/WalletConnect:\nconst provider = new ethers.BrowserProvider(window.ethereum);\nconst signer = await provider.getSigner();',
-    reference: 'OWASP A02:2021 - Cryptographic Failures',
+    reference: 'OWASP A04:2025 - Cryptographic Failures',
     patterns: [
       /privateKey\s*[:=]\s*["'`]0x[0-9a-fA-F]{64}["'`]/,
       /private[_-]?key\s*[:=]\s*["'`][0-9a-fA-F]{64}["'`]/i,
@@ -75,7 +75,7 @@ export const web3Rules: FileRule[] = [
     impact: 'Se o contrato for comprometido, todos os tokens aprovados podem ser roubados.',
     remediation: 'Use approve apenas pelo valor necessário. Informe o usuário claramente. Considere ERC-4626 permit.',
     safeExample: '// Aprove apenas o valor necessário:\nawait token.approve(spender, amountNeeded);\n// Não: approve(spender, ethers.MaxUint256)',
-    reference: 'OWASP A04:2021 - Insecure Design',
+    reference: 'OWASP A06:2025 - Insecure Design',
     patterns: [
       /approve\s*\([^,]+,\s*(?:ethers\.MaxUint256|2\s*\*\*\s*256|type\(uint256\)\.max|0xffffffff)/i,
     ],
@@ -90,7 +90,7 @@ export const web3Rules: FileRule[] = [
     impact: 'Comprometimento da chave do owner ou insider attack pode drenar o protocolo instantaneamente.',
     remediation: 'Use Gnosis Safe (multisig) e timelock para funções administrativas críticas.',
     safeExample: '// Use Governor + Timelock do OpenZeppelin para funções críticas.\nimport "@openzeppelin/contracts/governance/TimelockController.sol";',
-    reference: 'OWASP A04:2021 - Insecure Design',
+    reference: 'OWASP A06:2025 - Insecure Design',
     patterns: [
       /onlyOwner/,
     ],
